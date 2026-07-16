@@ -1,0 +1,23 @@
+model
+  schema 1.1
+
+type user
+
+type agent
+
+type credit_profile
+  relations
+    define owner: [user]
+    define consented_agent: [agent with time_bounded_consent]
+    define can_view_summary: owner
+    define can_view_full: owner or consented_agent
+    define can_run_mortgage_model: owner or consented_agent
+
+type mortgage_application
+  relations
+    define applicant: [user]
+    define can_view: applicant
+
+condition time_bounded_consent(current_time: timestamp, granted_at: timestamp) {
+  current_time < granted_at + duration("720h")
+}
