@@ -115,12 +115,12 @@ The `consented_agent` relation is the core of the demo: it's only written after 
 
 ### Scenario 5 — Shared Account Access (denied → user asserts access → granted live)
 
-**Prompt 5a:** *"Can you pull up the joint-2024 shared account?"*
+**Prompt 5a:** *"Can you pull up the joint-2026 shared account?"*
 **Prompt 5b (after denial):** *"Yes, I'm a member — looks like a sync issue."*
 
 **What happens:**
-1. Claude calls `get_joint_application_data` with `account_id: joint-2024`
-2. FGA check: `can_view` on `account:joint-2024` → ❌ no FGA record
+1. Claude calls `get_joint_application_data` with `account_id: joint-2026`
+2. FGA check: `can_view` on `account:joint-2026` → ❌ no FGA record
 3. Claude surfaces this as a possible access sync issue and confirms with the user
 4. User confirms they're a member
 5. Claude calls `repair_account_access_sync` — writes the missing FGA tuple
@@ -201,15 +201,50 @@ exports.onExecutePostLogin = async (event, api) => {
 };
 ```
 
-### Start ngrok
+---
+
+## Running the demo
+
+Three things need to be running: the Next.js app, ngrok, and Claude.ai.
+
+### 1. Start the MCP server
 
 ```bash
-ngrok http --domain=your-domain.ngrok-free.dev 4050
+cd demo-app
+npm run dev
 ```
 
-### Connect Claude.ai
+Starts on `http://localhost:4050`. This serves everything:
+- `/api/mcp` — the MCP server Claude.ai connects to
+- `/demo` — the demo control panel (add applicants, reset FGA state)
+- `/.well-known/*` — OAuth discovery endpoints
+
+### 2. Start ngrok
+
+In a separate terminal:
+
+```bash
+ngrok http --domain=pamala-unbeholden-undigressively.ngrok-free.dev 4050
+```
+
+Keep this running for the duration of the demo. The public URL is `your-domain.ngrok-free.dev`.
+
+### 3. Connect Claude.ai
 
 1. In Claude.ai → **Settings → Integrations → Add integration**
 2. Enter: `https://your-domain.ngrok-free.dev/api/mcp`
 3. When prompted for OAuth Client ID, enter: `https://claude.ai/oauth/mcp-oauth-client-metadata`
 4. Complete the Auth0 login flow
+
+### 4. Open the demo control panel
+
+Open `https://pamala-unbeholden-undigressively.ngrok-free.dev/demo` in a separate browser tab. Use this to:
+- **Add a user to joint-2026** before or during scenario 5
+- **Reset the FGA store** between demo runs (deletes all tuples; owner tuples are recreated automatically on next login)
+
+### Demo reset checklist
+
+Before each demo run:
+1. Click **Reset FGA store** on the demo panel — deletes all tuples (owner tuples recreated on next login)
+2. Confirm Claude.ai still shows the integration as connected
+3. Run scenarios in order: 1 → 2 → 3 → 4 → 5

@@ -1,7 +1,7 @@
 import { Tool, text } from './index';
 import { checkPermission } from '@/lib/fga';
 import { checkGuardianEnrollment, getGuardianEnrollmentUrl, initiateCiba } from '@/lib/ciba';
-import { getDemoData } from '@/data/sarah';
+import { getDemoData } from '@/data/demo-data';
 
 export const mortgageModelTool: Tool = {
   name: 'run_mortgage_model',

@@ -12,14 +12,14 @@ export const jointApplicationTool: Tool = {
     properties: {
       account_id: {
         type: 'string',
-        description: 'The shared account identifier (e.g. joint-2024)',
+        description: 'The shared account identifier (e.g. joint-2026)',
       },
     },
     required: ['account_id'],
   },
 
   async handler(args, { fgaUserId }) {
-    const applicationId = (args.account_id as string) ?? 'joint-2024';
+    const applicationId = (args.account_id as string) ?? 'joint-2026';
 
     const allowed = await checkPermission(
       `user:${fgaUserId}`,
@@ -44,7 +44,7 @@ export const jointApplicationTool: Tool = {
 
     return text(JSON.stringify({
       account_id: applicationId,
-      members: [fgaUserId, 'alex.morgan'],
+      members: [fgaUserId, 'ash.morgan'],
       account_type: 'Joint Credit Account',
       primary_property: '88 Lakeview Terrace, Austin, TX 78702',
       combined_credit_limit: 620000,
@@ -67,14 +67,14 @@ export const requestJointApplicationAccessTool: Tool = {
     properties: {
       account_id: {
         type: 'string',
-        description: 'The shared account identifier (e.g. joint-2024)',
+        description: 'The shared account identifier (e.g. joint-2026)',
       },
     },
     required: ['account_id'],
   },
 
   async handler(args, { fgaUserId }) {
-    const applicationId = (args.account_id as string) ?? 'joint-2024';
+    const applicationId = (args.account_id as string) ?? 'joint-2026';
 
     await fgaClient.write({
       writes: [

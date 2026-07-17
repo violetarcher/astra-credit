@@ -1,6 +1,6 @@
 import { Tool, text, error } from './index';
 import { checkPermission } from '@/lib/fga';
-import { getDemoData } from '@/data/sarah';
+import { getDemoData } from '@/data/demo-data';
 
 export const accountSummaryTool: Tool = {
   name: 'get_account_summary',
