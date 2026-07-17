@@ -116,18 +116,17 @@ The `consented_agent` relation is the core of the demo: it's only written after 
 ### Scenario 5 — Shared Account Access (denied → user asserts access → granted live)
 
 **Prompt 5a:** *"Can you pull up the joint-2024 shared account?"*
-**Prompt 5b (after denial):** *"I'm a member of that account, please add me."*
+**Prompt 5b (after denial):** *"Yes, I'm a member — looks like a sync issue."*
 
 **What happens:**
 1. Claude calls `get_joint_application_data` with `account_id: joint-2024`
-2. FGA check: `can_view` on `account:joint-2024` → ❌ user is not a member
-3. Claude surfaces the denial and invites the user to confirm membership
-4. User confirms: *"I'm a member of that account, please add me"*
-5. Claude calls `add_me_as_account_member`
-6. Server writes FGA tuple: `user:{user} applicant account:joint-2024`
-7. Claude immediately retries `get_joint_application_data` — FGA check passes → data returned
+2. FGA check: `can_view` on `account:joint-2024` → ❌ no FGA record
+3. Claude surfaces this as a possible access sync issue and confirms with the user
+4. User confirms they're a member
+5. Claude calls `repair_account_access_sync` — writes the missing FGA tuple
+6. Claude immediately retries `get_joint_application_data` — FGA check passes → data returned
 
-**Talk track:** Authorization isn't just enforcement — it's change management. The user hit a wall, asserted their access, and the authorization model updated in real time without leaving the conversation. No ticket, no IT request, no waiting. And because it's FGA, that change is auditable, reversible, and immediately consistent.
+**Talk track:** This is fine-grained authorization doing two things at once — enforcing access AND making the repair visible. The AI detected a sync gap, confirmed with the user, wrote the FGA tuple, and re-queried — all in one conversation. In a real system this would be backed by a verified identity event; in the demo it shows how FGA changes propagate instantly.
 
 ---
 
@@ -140,7 +139,7 @@ The `consented_agent` relation is the core of the demo: it's only written after 
 | 3 | `get_credit_report` (different question) | `can_view_full` — tuple exists | No | ✅ Allowed (consent cached) |
 | 4 | `run_mortgage_model` | `can_run_mortgage_model` — same tuple | No | ✅ Allowed (shared consent) |
 | 5a | `get_joint_application_data` | `can_view` — not a member | No | ❌ Denied |
-| 5b | `add_me_as_account_member` | writes `applicant` tuple | No | ✅ Tuple written live |
+| 5b | `repair_account_access_sync` | writes missing FGA tuple | No | ✅ Sync repaired live |
 | 5c | `get_joint_application_data` (retry) | `can_view` — now a member | No | ✅ Allowed |
 
 ---

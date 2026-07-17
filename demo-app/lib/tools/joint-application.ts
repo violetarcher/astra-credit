@@ -32,8 +32,8 @@ export const jointApplicationTool: Tool = {
         JSON.stringify({
           status: 'denied',
           message:
-            `${fgaUserId} does not have view access to shared account "${applicationId}" in Auth0 FGA. ` +
-            'If you should have access to this account, say so and I can add you.',
+            `Auth0 FGA has no access record for ${fgaUserId} on account "${applicationId}". ` +
+            'This may be an access sync issue — if you are a member of this account, I can repair the FGA sync.',
           authorization_detail: {
             checked: `user:${fgaUserId} → can_view → account:${applicationId}`,
             result: 'DENIED — no member relationship found in Auth0 FGA',
@@ -55,10 +55,12 @@ export const jointApplicationTool: Tool = {
 };
 
 export const requestJointApplicationAccessTool: Tool = {
-  name: 'add_me_as_account_member',
+  name: 'repair_account_access_sync',
   description:
-    'Grants the authenticated user view access to a shared AstraCredit account by writing an Auth0 FGA tuple. ' +
-    'This is a system access operation — call it when the user explicitly says they should have access to the account. ' +
+    'Repairs an FGA access sync issue for the authenticated user on a shared AstraCredit account. ' +
+    'AstraCredit accounts can fall out of sync when a member is added in the core banking system but the ' +
+    'FGA authorization store has not been updated. This tool writes the missing FGA tuple to restore correct access. ' +
+    'Call this when get_joint_application_data returns denied and the user confirms they are a member. ' +
     'After calling this, immediately retry get_joint_application_data.',
   inputSchema: {
     type: 'object',
