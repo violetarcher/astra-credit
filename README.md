@@ -87,16 +87,16 @@ The `consented_agent` relation is the core of the demo: it's only written after 
 
 ---
 
-### Scenario 3 — Full Credit Report (repeat — consent cached)
+### Scenario 3 — Credit Score Deep Dive (consent already cached)
 
-**Prompt:** *"Can you pull that report again?"*
+**Prompt:** *"What factors are affecting my credit score?"*
 
 **What happens:**
-1. Claude calls `get_credit_report` again
-2. FGA check: `can_view_full` — `consented_agent` tuple exists and condition passes
-3. Report returned immediately — no Guardian push
+1. Claude calls `get_credit_report`
+2. FGA check: `can_view_full` — `consented_agent` tuple from Scenario 2 still exists and condition passes
+3. Report returned immediately — no Guardian push, different question entirely
 
-**Talk track:** The user already approved. FGA remembers. No duplicate interruptions — this is how you build AI experiences that are secure *and* usable.
+**Talk track:** The user asked something completely different, but FGA already knows the agent has consent. No second push, no friction — the 30-day consent window means the user stays in control without being interrupted on every question.
 
 ---
 
@@ -113,16 +113,20 @@ The `consented_agent` relation is the core of the demo: it's only written after 
 
 ---
 
-### Scenario 5 — Joint Application Data (access denied)
+### Scenario 5 — Joint Application Data (denied → access granted live)
 
 **Prompt:** *"Can you pull the data from my joint mortgage application?"*
 
 **What happens:**
 1. Claude calls `get_joint_application_data`
 2. FGA check: `can_view` on `mortgage_application:joint-2024` → ❌ user is not an `applicant`
-3. Tool returns a denial — no data exposed
+3. Tool returns denial — Claude surfaces this and offers to request access
+4. User says yes
+5. Claude calls `request_joint_application_access`
+6. Server writes FGA tuple: `user:{user} applicant mortgage_application:joint-2024`
+7. Claude retries `get_joint_application_data` — FGA check now passes → data returned
 
-**Talk track:** FGA enforces object-level access. Even with an active consent session, the AI cannot access resources the user isn't authorized for. This is the fine-grained part of fine-grained authorization.
+**Talk track:** This is the full picture of fine-grained authorization. Not just enforcing access, but updating it in real time. The AI drove the entire flow — denial, access request, re-authorization, retrieval — without leaving the conversation. And every step is a real FGA tuple, fully auditable.
 
 ---
 
@@ -132,9 +136,11 @@ The `consented_agent` relation is the core of the demo: it's only written after 
 |---|------|-------------|-------|--------|
 | 1 | `get_account_summary` | `can_view_summary` | No | ✅ Allowed |
 | 2 | `get_credit_report` (first) | `can_view_full` — no tuple | Yes — Guardian push | ✅ Allowed after approval |
-| 3 | `get_credit_report` (repeat) | `can_view_full` — tuple exists | No | ✅ Allowed (consent cached) |
+| 3 | `get_credit_report` (different question) | `can_view_full` — tuple exists | No | ✅ Allowed (consent cached) |
 | 4 | `run_mortgage_model` | `can_run_mortgage_model` — same tuple | No | ✅ Allowed (shared consent) |
-| 5 | `get_joint_application_data` | `can_view` — not an applicant | No | ❌ Denied |
+| 5a | `get_joint_application_data` | `can_view` — not an applicant | No | ❌ Denied |
+| 5b | `request_joint_application_access` | writes `applicant` tuple | No | ✅ Tuple written live |
+| 5c | `get_joint_application_data` (retry) | `can_view` — now an applicant | No | ✅ Allowed |
 
 ---
 
