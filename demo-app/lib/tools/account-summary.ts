@@ -1,7 +1,6 @@
 import { Tool, text, error } from './index';
 import { checkPermission } from '@/lib/fga';
-import { getFgaUserId } from '@/lib/auth';
-import { sarahData } from '@/data/sarah';
+import { getDemoData } from '@/data/sarah';
 
 export const accountSummaryTool: Tool = {
   name: 'get_account_summary',
@@ -12,14 +11,7 @@ export const accountSummaryTool: Tool = {
     properties: {},
   },
 
-  async handler(_args, userId) {
-    let fgaUserId: string;
-    try {
-      fgaUserId = getFgaUserId(userId);
-    } catch {
-      return error('User not found in AstraCredit system.');
-    }
-
+  async handler(_args, { fgaUserId, displayName }) {
     const allowed = await checkPermission(
       `user:${fgaUserId}`,
       'can_view_summary',
@@ -32,6 +24,6 @@ export const accountSummaryTool: Tool = {
       );
     }
 
-    return text(JSON.stringify(sarahData.summary, null, 2));
+    return text(JSON.stringify(getDemoData(displayName).summary, null, 2));
   },
 };

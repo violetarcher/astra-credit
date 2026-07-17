@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { Tool, text, error } from './index';
 import { pollCibaToken } from '@/lib/ciba';
 import { writeConsentTuple } from '@/lib/fga';
-import { getFgaUserId } from '@/lib/auth';
 
 const schema = z.object({
   auth_req_id: z.string().min(1),
@@ -25,16 +24,9 @@ export const pollCibaApprovalTool: Tool = {
     required: ['auth_req_id'],
   },
 
-  async handler(args, userId) {
+  async handler(args, { fgaUserId }) {
     const parsed = schema.safeParse(args);
     if (!parsed.success) return error('Invalid arguments: auth_req_id is required.');
-
-    let fgaUserId: string;
-    try {
-      fgaUserId = getFgaUserId(userId);
-    } catch {
-      return error('User not found in AstraCredit system.');
-    }
 
     const status = await pollCibaToken(parsed.data.auth_req_id);
 

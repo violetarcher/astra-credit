@@ -1,4 +1,4 @@
-export const sarahData = {
+const baseData = {
   summary: {
     name: 'Sarah Johnson',
     creditScore: 742,
@@ -118,3 +118,13 @@ export const sarahData = {
     ],
   },
 };
+
+export function getDemoData(displayName: string) {
+  const firstName = displayName.split(' ')[0];
+  const raw = JSON.stringify(baseData);
+  const personalized = raw
+    .replace(/Sarah Johnson/g, displayName)
+    .replace(/Sarah has/g, `${firstName} has`)
+    .replace(/Sarah meets/g, `${firstName} meets`);
+  return JSON.parse(personalized) as typeof baseData;
+}

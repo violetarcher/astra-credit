@@ -1,8 +1,7 @@
-import { Tool, text, error } from './index';
+import { Tool, text } from './index';
 import { checkPermission } from '@/lib/fga';
-import { getFgaUserId } from '@/lib/auth';
 import { checkGuardianEnrollment, getGuardianEnrollmentUrl, initiateCiba } from '@/lib/ciba';
-import { sarahData } from '@/data/sarah';
+import { getDemoData } from '@/data/sarah';
 
 export const creditReportTool: Tool = {
   name: 'get_credit_report',
@@ -13,18 +12,11 @@ export const creditReportTool: Tool = {
     properties: {},
   },
 
-  async handler(_args, userId) {
-    let fgaUserId: string;
-    try {
-      fgaUserId = getFgaUserId(userId);
-    } catch {
-      return error('User not found in AstraCredit system.');
-    }
-
+  async handler(_args, { authSub, fgaUserId, displayName }) {
     // Check Guardian enrollment before anything else
-    const enrolled = await checkGuardianEnrollment(userId);
+    const enrolled = await checkGuardianEnrollment(authSub);
     if (!enrolled) {
-      const enrollmentUrl = await getGuardianEnrollmentUrl(userId).catch(() => null);
+      const enrollmentUrl = await getGuardianEnrollmentUrl(authSub).catch(() => null);
       return text(
         JSON.stringify({
           status: 'enrollment_required',
@@ -44,12 +36,12 @@ export const creditReportTool: Tool = {
     );
 
     if (allowed) {
-      return text(JSON.stringify(sarahData.creditReport, null, 2));
+      return text(JSON.stringify(getDemoData(displayName).creditReport, null, 2));
     }
 
     // No valid consent tuple — initiate CIBA
     const authReqId = await initiateCiba(
-      userId,
+      authSub,
       'AstraCredit: Approve credit report access for Claude'
     );
 

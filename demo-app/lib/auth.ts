@@ -5,19 +5,33 @@ const getJWKS = () =>
     new URL(`https://${process.env.AUTH0_DOMAIN}/.well-known/jwks.json`)
   );
 
-export async function validateToken(token: string): Promise<{ sub: string }> {
+const EMAIL_CLAIM = 'https://test.app.com/email';
+
+export async function validateToken(token: string): Promise<{ sub: string; fgaUserId: string }> {
   const { payload } = await jwtVerify(token, getJWKS(), {
     audience: process.env.AUTH0_AUDIENCE,
     issuer: `https://${process.env.AUTH0_DOMAIN}/`,
   });
 
   if (!payload.sub) throw new Error('Missing sub claim in token');
-  return { sub: payload.sub };
+
+  const email = payload[EMAIL_CLAIM] as string | undefined;
+  const fgaUserId = deriveFgaUserId(email ?? payload.sub);
+
+  return { sub: payload.sub, fgaUserId };
 }
 
-// Maps an Auth0 user sub to a stable FGA user ID.
-// Demo only: Sarah is the sole user. Production would use a DB lookup.
-export function getFgaUserId(authSub: string): string {
-  if (authSub === process.env.SARAH_USER_ID) return 'sarah';
-  throw new Error(`No FGA mapping for user: ${authSub}`);
+// violet.archer@okta.com → violet.archer
+// Falls back to sanitized sub (auth0|abc123 → auth0-abc123) if no email claim.
+export function deriveFgaUserId(identity: string): string {
+  const localPart = identity.includes('@') ? identity.split('@')[0] : identity;
+  return localPart.replace(/[^a-zA-Z0-9._-]/g, '-').toLowerCase();
+}
+
+// violet.archer → Violet Archer
+export function getDisplayName(fgaUserId: string): string {
+  return fgaUserId
+    .split(/[._-]/)
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+    .join(' ');
 }

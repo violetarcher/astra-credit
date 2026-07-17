@@ -1,8 +1,7 @@
-import { Tool, text, error } from './index';
+import { Tool, text } from './index';
 import { checkPermission } from '@/lib/fga';
-import { getFgaUserId } from '@/lib/auth';
 import { checkGuardianEnrollment, getGuardianEnrollmentUrl, initiateCiba } from '@/lib/ciba';
-import { sarahData } from '@/data/sarah';
+import { getDemoData } from '@/data/sarah';
 
 export const mortgageModelTool: Tool = {
   name: 'run_mortgage_model',
@@ -15,18 +14,11 @@ export const mortgageModelTool: Tool = {
     properties: {},
   },
 
-  async handler(_args, userId) {
-    let fgaUserId: string;
-    try {
-      fgaUserId = getFgaUserId(userId);
-    } catch {
-      return error('User not found in AstraCredit system.');
-    }
-
+  async handler(_args, { authSub, fgaUserId, displayName }) {
     // Check Guardian enrollment
-    const enrolled = await checkGuardianEnrollment(userId);
+    const enrolled = await checkGuardianEnrollment(authSub);
     if (!enrolled) {
-      const enrollmentUrl = await getGuardianEnrollmentUrl(userId).catch(() => null);
+      const enrollmentUrl = await getGuardianEnrollmentUrl(authSub).catch(() => null);
       return text(
         JSON.stringify({
           status: 'enrollment_required',
@@ -45,12 +37,12 @@ export const mortgageModelTool: Tool = {
     );
 
     if (allowed) {
-      return text(JSON.stringify(sarahData.mortgageEligibility, null, 2));
+      return text(JSON.stringify(getDemoData(displayName).mortgageEligibility, null, 2));
     }
 
     // No consent on record — initiate CIBA
     const authReqId = await initiateCiba(
-      userId,
+      authSub,
       'AstraCredit: Approve mortgage eligibility analysis for Claude'
     );
 

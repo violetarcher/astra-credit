@@ -20,8 +20,14 @@ export interface ToolResult {
   isError?: boolean;
 }
 
+export interface ToolContext {
+  authSub: string;
+  fgaUserId: string;
+  displayName: string;
+}
+
 export interface Tool extends McpToolDefinition {
-  handler: (args: Record<string, unknown>, userId: string) => Promise<ToolResult>;
+  handler: (args: Record<string, unknown>, ctx: ToolContext) => Promise<ToolResult>;
 }
 
 const registry: Tool[] = [
@@ -47,7 +53,7 @@ export function listTools(): McpToolDefinition[] {
 export async function callTool(
   name: string,
   args: Record<string, unknown>,
-  userId: string
+  ctx: ToolContext
 ): Promise<ToolResult> {
   const tool = toolMap.get(name);
   if (!tool) {
@@ -56,7 +62,7 @@ export async function callTool(
       isError: true,
     };
   }
-  return tool.handler(args, userId);
+  return tool.handler(args, ctx);
 }
 
 function text(content: string): ToolResult {

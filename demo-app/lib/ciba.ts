@@ -42,7 +42,12 @@ export async function checkGuardianEnrollment(userId: string): Promise<boolean> 
     : (body.authenticators ?? []);
 
   return methods.some(
-    (m) => m.type === 'push-notification' && m.confirmed !== false
+    (m) =>
+      m.type === 'guardian' &&
+      m.confirmed !== false &&
+      (m as { authentication_methods?: { type: string }[] }).authentication_methods?.some(
+        (am) => am.type === 'push'
+      )
   );
 }
 
@@ -74,7 +79,7 @@ export async function initiateCiba(userId: string, bindingMessage: string): Prom
       client_id: process.env.CIBA_CLIENT_ID!,
       client_secret: process.env.CIBA_CLIENT_SECRET!,
       scope: 'openid',
-      login_hint: userId,
+      login_hint: JSON.stringify({ format: 'iss_sub', iss: `https://${process.env.AUTH0_DOMAIN}/`, sub: userId }),
       binding_message: bindingMessage,
     }),
   });

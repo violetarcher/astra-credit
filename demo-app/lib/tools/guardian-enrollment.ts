@@ -11,9 +11,9 @@ export const checkGuardianEnrollmentTool: Tool = {
     properties: {},
   },
 
-  async handler(_args, userId) {
+  async handler(_args, { authSub }) {
     try {
-      const enrolled = await checkGuardianEnrollment(userId);
+      const enrolled = await checkGuardianEnrollment(authSub);
       return text(
         JSON.stringify({
           enrolled,
@@ -38,9 +38,9 @@ export const getGuardianEnrollmentUrlTool: Tool = {
     properties: {},
   },
 
-  async handler(_args, userId) {
+  async handler(_args, { authSub }) {
     try {
-      const url = await getGuardianEnrollmentUrl(userId);
+      const url = await getGuardianEnrollmentUrl(authSub);
       return text(
         JSON.stringify({
           enrollment_url: url,

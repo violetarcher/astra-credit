@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateToken } from '@/lib/auth';
+import { validateToken, getDisplayName } from '@/lib/auth';
+import { ensureOwnerTuple } from '@/lib/fga';
 import { listTools, callTool } from '@/lib/tools';
 
 export const runtime = 'nodejs';
@@ -19,7 +20,7 @@ function unauthorized() {
     headers: {
       'WWW-Authenticate': [
         'Bearer realm="AstraCredit"',
-        `resource_metadata_url="${process.env.NEXT_PUBLIC_BASE_URL}/.well-known/oauth-protected-resource"`,
+        `resource_metadata="${process.env.NEXT_PUBLIC_BASE_URL}/.well-known/oauth-protected-resource"`,
       ].join(', '),
     },
   });
@@ -29,13 +30,16 @@ export async function POST(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
   if (!authHeader?.startsWith('Bearer ')) return unauthorized();
 
-  let userId: string;
+  let authSub: string;
+  let fgaUserId: string;
   try {
-    const claims = await validateToken(authHeader.slice(7));
-    userId = claims.sub;
-  } catch {
+    ({ sub: authSub, fgaUserId } = await validateToken(authHeader.slice(7)));
+  } catch (e) {
+    console.error('[MCP auth]', (e as Error).message);
     return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
   }
+
+  await ensureOwnerTuple(fgaUserId);
 
   let body: { jsonrpc?: string; method?: string; params?: unknown; id?: unknown };
   try {
@@ -70,7 +74,7 @@ export async function POST(request: NextRequest) {
       };
 
       try {
-        const result = await callTool(name, args ?? {}, userId);
+        const result = await callTool(name, args ?? {}, { authSub, fgaUserId, displayName: getDisplayName(fgaUserId) });
         return jsonRpc(id, result);
       } catch (e) {
         return jsonRpc(id, {

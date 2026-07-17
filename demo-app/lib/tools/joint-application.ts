@@ -1,6 +1,5 @@
-import { Tool, text, error } from './index';
+import { Tool, text } from './index';
 import { checkPermission } from '@/lib/fga';
-import { getFgaUserId } from '@/lib/auth';
 
 export const jointApplicationTool: Tool = {
   name: 'get_joint_application_data',
@@ -18,14 +17,7 @@ export const jointApplicationTool: Tool = {
     required: ['application_id'],
   },
 
-  async handler(args, userId) {
-    let fgaUserId: string;
-    try {
-      fgaUserId = getFgaUserId(userId);
-    } catch {
-      return error('User not found in AstraCredit system.');
-    }
-
+  async handler(args, { fgaUserId }) {
     const applicationId = (args.application_id as string) ?? 'joint-2024';
 
     const allowed = await checkPermission(

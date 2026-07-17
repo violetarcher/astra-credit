@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
         destination: '/api/well-known/oauth-protected-resource',
       },
       {
+        source: '/.well-known/oauth-protected-resource/:path*',
+        destination: '/api/well-known/oauth-protected-resource',
+      },
+      {
         source: '/.well-known/oauth-authorization-server',
         destination: '/api/well-known/oauth-authorization-server',
       },
