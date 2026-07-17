@@ -62,7 +62,12 @@ export async function getGuardianEnrollmentUrl(userId: string): Promise<string> 
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ user_id: userId }),
+      body: JSON.stringify({
+        user_id: userId,
+        send_mail: false,
+        factor: 'push-notification',
+        allow_multiple_enrollments: true,
+      }),
     }
   );
   if (!res.ok) throw new Error('Failed to create enrollment ticket');

@@ -4,22 +4,22 @@ import { checkPermission, fgaClient } from '@/lib/fga';
 export const jointApplicationTool: Tool = {
   name: 'get_joint_application_data',
   description:
-    'Retrieves data for a joint mortgage application. ' +
-    'Only users who have been added as applicants to the joint application can access this data. ' +
-    'If access is denied, offer to call request_joint_application_access to request it.',
+    'Retrieves data for a shared AstraCredit account. ' +
+    'Access is controlled by Auth0 FGA — only users listed as members can view this account. ' +
+    'If access is denied, inform the user and offer to call add_me_as_account_member if they confirm they should have access.',
   inputSchema: {
     type: 'object',
     properties: {
-      application_id: {
+      account_id: {
         type: 'string',
-        description: 'The joint application identifier (e.g. joint-2024)',
+        description: 'The shared account identifier (e.g. joint-2024)',
       },
     },
-    required: ['application_id'],
+    required: ['account_id'],
   },
 
   async handler(args, { fgaUserId }) {
-    const applicationId = (args.application_id as string) ?? 'joint-2024';
+    const applicationId = (args.account_id as string) ?? 'joint-2024';
 
     const allowed = await checkPermission(
       `user:${fgaUserId}`,
@@ -32,46 +32,47 @@ export const jointApplicationTool: Tool = {
         JSON.stringify({
           status: 'denied',
           message:
-            `Access denied. ${fgaUserId} is not listed as an applicant on mortgage application "${applicationId}". ` +
-            'Would you like me to request access? I can call request_joint_application_access to add you as an applicant.',
+            `${fgaUserId} does not have view access to shared account "${applicationId}" in Auth0 FGA. ` +
+            'If you should have access to this account, say so and I can add you.',
           authorization_detail: {
-            checked: `user:${fgaUserId} → can_view → mortgage_application:${applicationId}`,
-            result: 'DENIED — no applicant relationship found in Auth0 FGA',
+            checked: `user:${fgaUserId} → can_view → account:${applicationId}`,
+            result: 'DENIED — no member relationship found in Auth0 FGA',
           },
         })
       );
     }
 
     return text(JSON.stringify({
-      application_id: applicationId,
-      applicants: [fgaUserId, 'alex.morgan'],
-      property: '88 Lakeview Terrace, Austin, TX 78702',
-      requestedLoanAmount: 620000,
-      estimatedPropertyValue: 775000,
-      status: 'In Review',
-      submittedAt: '2025-06-15',
+      account_id: applicationId,
+      members: [fgaUserId, 'alex.morgan'],
+      account_type: 'Joint Credit Account',
+      primary_property: '88 Lakeview Terrace, Austin, TX 78702',
+      combined_credit_limit: 620000,
+      status: 'Active',
+      opened: '2025-06-15',
     }));
   },
 };
 
 export const requestJointApplicationAccessTool: Tool = {
-  name: 'request_joint_application_access',
+  name: 'add_me_as_account_member',
   description:
-    'Adds the authenticated user as an applicant on a joint mortgage application in Auth0 FGA, ' +
-    'granting them access to view the application data. Call this after get_joint_application_data returns access denied.',
+    'Grants the authenticated user view access to a shared AstraCredit account by writing an Auth0 FGA tuple. ' +
+    'This is a system access operation — call it when the user explicitly says they should have access to the account. ' +
+    'After calling this, immediately retry get_joint_application_data.',
   inputSchema: {
     type: 'object',
     properties: {
-      application_id: {
+      account_id: {
         type: 'string',
-        description: 'The joint application identifier (e.g. joint-2024)',
+        description: 'The shared account identifier (e.g. joint-2024)',
       },
     },
-    required: ['application_id'],
+    required: ['account_id'],
   },
 
   async handler(args, { fgaUserId }) {
-    const applicationId = (args.application_id as string) ?? 'joint-2024';
+    const applicationId = (args.account_id as string) ?? 'joint-2024';
 
     await fgaClient.write({
       writes: [
@@ -86,8 +87,8 @@ export const requestJointApplicationAccessTool: Tool = {
     return text(
       JSON.stringify({
         status: 'granted',
-        message: `Access granted. ${fgaUserId} has been added as an applicant on mortgage application "${applicationId}" in Auth0 FGA. You can now call get_joint_application_data.`,
-        fga_tuple_written: `user:${fgaUserId} applicant mortgage_application:${applicationId}`,
+        message: `Done. ${fgaUserId} now has view access to account "${applicationId}" — the Auth0 FGA tuple has been written. Retrying the data fetch now.`,
+        fga_tuple_written: `user:${fgaUserId} applicant account:${applicationId}`,
       })
     );
   },

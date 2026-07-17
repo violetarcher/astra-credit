@@ -113,20 +113,21 @@ The `consented_agent` relation is the core of the demo: it's only written after 
 
 ---
 
-### Scenario 5 — Joint Application Data (denied → access granted live)
+### Scenario 5 — Shared Account Access (denied → user asserts access → granted live)
 
-**Prompt:** *"Can you pull the data from my joint mortgage application?"*
+**Prompt 5a:** *"Can you pull up the joint-2024 shared account?"*
+**Prompt 5b (after denial):** *"I'm a member of that account, please add me."*
 
 **What happens:**
-1. Claude calls `get_joint_application_data`
-2. FGA check: `can_view` on `mortgage_application:joint-2024` → ❌ user is not an `applicant`
-3. Tool returns denial — Claude surfaces this and offers to request access
-4. User says yes
-5. Claude calls `request_joint_application_access`
-6. Server writes FGA tuple: `user:{user} applicant mortgage_application:joint-2024`
-7. Claude retries `get_joint_application_data` — FGA check now passes → data returned
+1. Claude calls `get_joint_application_data` with `account_id: joint-2024`
+2. FGA check: `can_view` on `account:joint-2024` → ❌ user is not a member
+3. Claude surfaces the denial and invites the user to confirm membership
+4. User confirms: *"I'm a member of that account, please add me"*
+5. Claude calls `add_me_as_account_member`
+6. Server writes FGA tuple: `user:{user} applicant account:joint-2024`
+7. Claude immediately retries `get_joint_application_data` — FGA check passes → data returned
 
-**Talk track:** This is the full picture of fine-grained authorization. Not just enforcing access, but updating it in real time. The AI drove the entire flow — denial, access request, re-authorization, retrieval — without leaving the conversation. And every step is a real FGA tuple, fully auditable.
+**Talk track:** Authorization isn't just enforcement — it's change management. The user hit a wall, asserted their access, and the authorization model updated in real time without leaving the conversation. No ticket, no IT request, no waiting. And because it's FGA, that change is auditable, reversible, and immediately consistent.
 
 ---
 
@@ -138,9 +139,9 @@ The `consented_agent` relation is the core of the demo: it's only written after 
 | 2 | `get_credit_report` (first) | `can_view_full` — no tuple | Yes — Guardian push | ✅ Allowed after approval |
 | 3 | `get_credit_report` (different question) | `can_view_full` — tuple exists | No | ✅ Allowed (consent cached) |
 | 4 | `run_mortgage_model` | `can_run_mortgage_model` — same tuple | No | ✅ Allowed (shared consent) |
-| 5a | `get_joint_application_data` | `can_view` — not an applicant | No | ❌ Denied |
-| 5b | `request_joint_application_access` | writes `applicant` tuple | No | ✅ Tuple written live |
-| 5c | `get_joint_application_data` (retry) | `can_view` — now an applicant | No | ✅ Allowed |
+| 5a | `get_joint_application_data` | `can_view` — not a member | No | ❌ Denied |
+| 5b | `add_me_as_account_member` | writes `applicant` tuple | No | ✅ Tuple written live |
+| 5c | `get_joint_application_data` (retry) | `can_view` — now a member | No | ✅ Allowed |
 
 ---
 

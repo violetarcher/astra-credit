@@ -1,7 +1,7 @@
 import { accountSummaryTool } from './account-summary';
 import { creditReportTool } from './credit-report';
 import { mortgageModelTool } from './mortgage-model';
-import { jointApplicationTool, requestJointApplicationAccessTool } from './joint-application';
+import { jointApplicationTool, requestJointApplicationAccessTool as addMeAsJointApplicantTool } from './joint-application';
 import { checkGuardianEnrollmentTool, getGuardianEnrollmentUrlTool } from './guardian-enrollment';
 import { pollCibaApprovalTool } from './ciba-poll';
 
@@ -36,7 +36,7 @@ const registry: Tool[] = [
   pollCibaApprovalTool,
   mortgageModelTool,
   jointApplicationTool,
-  requestJointApplicationAccessTool,
+  addMeAsJointApplicantTool,
   checkGuardianEnrollmentTool,
   getGuardianEnrollmentUrlTool,
 ];
