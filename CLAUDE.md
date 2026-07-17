@@ -61,7 +61,7 @@ demo-app/
 | `get_credit_report` | `can_view_full` | Yes (first time) |
 | `poll_ciba_approval` | — | Polls + writes tuple on approval |
 | `run_mortgage_model` | `can_run_mortgage_model` | No (shares tuple from get_credit_report) |
-| `get_joint_application_data` | `can_view` on `mortgage_application:joint-2026` | No (demo denial) |
+| `get_joint_application_data` | `can_view` on `mortgage_application:joint-2026` | No — denied until SE adds user via demo panel |
 | `check_guardian_enrollment` | — | No |
 | `get_guardian_enrollment_url` | — | No |
 

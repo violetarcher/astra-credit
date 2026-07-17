@@ -1,5 +1,5 @@
 import { Tool, text } from './index';
-import { checkPermission, fgaClient } from '@/lib/fga';
+import { checkPermission } from '@/lib/fga';
 
 export const jointApplicationTool: Tool = {
   name: 'get_joint_application_data',
@@ -32,10 +32,10 @@ export const jointApplicationTool: Tool = {
         JSON.stringify({
           status: 'denied',
           message:
-            `Auth0 FGA has no access record for ${fgaUserId} on account "${applicationId}". ` +
-            'This may be an access sync issue — if you are a member of this account, I can repair the FGA sync.',
+            `Auth0 FGA does not have a member record for ${fgaUserId} on account "${applicationId}". ` +
+            'Once you have been added to the account, ask me to pull it up again.',
           authorization_detail: {
-            checked: `user:${fgaUserId} → can_view → account:${applicationId}`,
+            checked: `user:${fgaUserId} → can_view → mortgage_application:${applicationId}`,
             result: 'DENIED — no member relationship found in Auth0 FGA',
           },
         })
@@ -54,44 +54,3 @@ export const jointApplicationTool: Tool = {
   },
 };
 
-export const requestJointApplicationAccessTool: Tool = {
-  name: 'repair_account_access_sync',
-  description:
-    'Repairs an FGA access sync issue for the authenticated user on a shared AstraCredit account. ' +
-    'AstraCredit accounts can fall out of sync when a member is added in the core banking system but the ' +
-    'FGA authorization store has not been updated. This tool writes the missing FGA tuple to restore correct access. ' +
-    'Call this when get_joint_application_data returns denied and the user confirms they are a member. ' +
-    'After calling this, immediately retry get_joint_application_data.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      account_id: {
-        type: 'string',
-        description: 'The shared account identifier (e.g. joint-2026)',
-      },
-    },
-    required: ['account_id'],
-  },
-
-  async handler(args, { fgaUserId }) {
-    const applicationId = (args.account_id as string) ?? 'joint-2026';
-
-    await fgaClient.write({
-      writes: [
-        {
-          user: `user:${fgaUserId}`,
-          relation: 'applicant',
-          object: `mortgage_application:${applicationId}`,
-        },
-      ],
-    });
-
-    return text(
-      JSON.stringify({
-        status: 'granted',
-        message: `Done. ${fgaUserId} now has view access to account "${applicationId}" — the Auth0 FGA tuple has been written. Retrying the data fetch now.`,
-        fga_tuple_written: `user:${fgaUserId} applicant account:${applicationId}`,
-      })
-    );
-  },
-};

@@ -113,20 +113,20 @@ The `consented_agent` relation is the core of the demo: it's only written after 
 
 ---
 
-### Scenario 5 — Shared Account Access (denied → user asserts access → granted live)
+### Scenario 5 — Shared Account Access (denied → added out-of-band → re-check passes)
 
 **Prompt 5a:** *"Can you pull up the joint-2026 shared account?"*
-**Prompt 5b (after denial):** *"Yes, I'm a member — looks like a sync issue."*
+**Prompt 5b (after being added):** *"I just got added — can you check again?"*
 
 **What happens:**
 1. Claude calls `get_joint_application_data` with `account_id: joint-2026`
-2. FGA check: `can_view` on `account:joint-2026` → ❌ no FGA record
-3. Claude surfaces this as a possible access sync issue and confirms with the user
-4. User confirms they're a member
-5. Claude calls `repair_account_access_sync` — writes the missing FGA tuple
-6. Claude immediately retries `get_joint_application_data` — FGA check passes → data returned
+2. FGA check: `can_view` on `mortgage_application:joint-2026` → ❌ no member record
+3. Claude tells the user they're not yet a member and to ask again once they've been added
+4. (SE uses the demo panel to write the FGA tuple for the user)
+5. User asks Claude to check again
+6. FGA check passes → joint account data returned
 
-**Talk track:** This is fine-grained authorization doing two things at once — enforcing access AND making the repair visible. The AI detected a sync gap, confirmed with the user, wrote the FGA tuple, and re-queried — all in one conversation. In a real system this would be backed by a verified identity event; in the demo it shows how FGA changes propagate instantly.
+**Talk track:** The AI can only do what FGA allows — it doesn't grant its own access. Someone with authority (an admin, a loan officer) has to add the user in the authorization store. The moment that happens, FGA propagates instantly and Claude can proceed. No repair tool, no self-granted access.
 
 ---
 
@@ -139,7 +139,7 @@ The `consented_agent` relation is the core of the demo: it's only written after 
 | 3 | `get_credit_report` (different question) | `can_view_full` — tuple exists | No | ✅ Allowed (consent cached) |
 | 4 | `run_mortgage_model` | `can_run_mortgage_model` — same tuple | No | ✅ Allowed (shared consent) |
 | 5a | `get_joint_application_data` | `can_view` — not a member | No | ❌ Denied |
-| 5b | `repair_account_access_sync` | writes missing FGA tuple | No | ✅ Sync repaired live |
+| 5b | *(SE adds user via demo panel)* | FGA tuple written externally | — | — |
 | 5c | `get_joint_application_data` (retry) | `can_view` — now a member | No | ✅ Allowed |
 
 ---
