@@ -158,7 +158,7 @@ export default function DemoPanel() {
   const canCreate = !!(newUser.trim() && newRelation.trim() && newObject.trim() && !createLoading);
 
   return (
-    <main style={{ fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace', padding: '1.75rem 2rem', maxWidth: 1300 }}>
+    <main style={{ fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace', padding: '1.75rem 2.5rem', maxWidth: 1600 }}>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem' }}>
@@ -184,7 +184,7 @@ export default function DemoPanel() {
       </div>
 
       {/* ── Two-column: model | tuples ─────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '560px 1fr', gap: '1.25rem', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '660px 1fr', gap: '1.25rem', alignItems: 'start' }}>
 
         {/* Left — FGA Model */}
         <div className="card card-accent-blue">
@@ -333,56 +333,33 @@ export default function DemoPanel() {
 
 // ─── Diagrams panel ───────────────────────────────────────────────────────────
 
-const ARCH_DIAGRAM = `sequenceDiagram
-  actor U as 👤 User (Browser)
-  participant P as 📱 Phone (Guardian)
-  participant CL as 🤖 Claude.ai
-  participant A0 as Auth0
-  participant M as MCP Server
-  participant F as Auth0 FGA
+const ARCH_DIAGRAM = `graph LR
+  U["👤 User\\nBrowser"]
+  P["📱 User\\nPhone"]
+  CL["🤖 Claude.ai\\nMCP Client"]
+  M["⚙ MCP Server\\nNext.js /api/mcp"]
+  F["🗄 Auth0 FGA\\nAuthorization Store"]
 
-  rect rgb(237,244,255)
-    Note over U,A0: ① Connect MCP Integration
-    U->>CL: Add integration URL /api/mcp
-    CL->>A0: Authorization request — OAuth 2.0 PKCE (tpc_ CIMD)
-    A0-->>U: Redirect to login page
-    U->>A0: Enter credentials
-    A0-->>CL: JWT access token (sub + email claims)
+  subgraph auth0["Auth0"]
+    AT["Token Service\\n/authorize · /token · JWKS"]
+    CB["CIBA + Guardian\\n/bc-authorize · push"]
   end
 
-  rect rgb(237,255,244)
-    Note over CL,F: ② Tool Call — Account Summary (no consent needed)
-    CL->>M: POST /api/mcp — Bearer JWT + tool: get_account_summary
-    M->>A0: Verify JWT signature via JWKS endpoint
-    M->>F: ensureOwnerTuple(userId) — idempotent, first call only
-    M->>F: check can_view_summary on credit_profile:userId
-    F-->>M: ✅ allowed — user is owner
-    M-->>CL: account summary data
-  end
-
-  rect rgb(255,248,237)
-    Note over CL,P: ③ Sensitive Data — CIBA Consent Flow
-    CL->>M: tool: get_credit_report
-    M->>F: check can_view_full on credit_profile:userId
-    F-->>M: ❌ denied — no consented_agent tuple
-    M->>A0: bc-authorize (CIBA) — login_hint: {format:iss_sub, sub:userId}
-    A0->>P: Guardian push notification
-    U->>P: ✅ Approve on phone
-    loop Poll every 2s
-      M->>A0: Token endpoint (auth_req_id poll)
-    end
-    A0-->>M: CIBA approved — consent token
-    M->>F: write consented_agent tuple (granted_at = now, expires 30d)
-    M-->>CL: full credit report ✅
-  end
-
-  rect rgb(248,237,255)
-    Note over CL,F: ④ Subsequent Calls — Consent Cached
-    CL->>M: tool: run_mortgage_model
-    M->>F: check can_run_mortgage_model
-    F-->>M: ✅ same tuple — condition passes (within 30 days)
-    M-->>CL: mortgage analysis (no Guardian push needed)
-  end`;
+  U -->|"add integration"| CL
+  CL -->|"OAuth 2.0 PKCE\\ntpc_ CIMD"| AT
+  AT -->|"login page"| U
+  U -->|"credentials"| AT
+  AT -->|"JWT access token"| CL
+  CL -->|"Bearer JWT\\n+ tool call"| M
+  M -->|"verify JWT"| AT
+  M -->|"check permission\\nensureOwnerTuple"| F
+  F -->|"✅ allowed / ❌ denied"| M
+  M -->|"bc-authorize"| CB
+  CB -->|"Guardian push"| P
+  P -->|"tap Approve"| CB
+  CB -->|"CIBA token"| M
+  M -->|"write consent tuple"| F
+  M -->|"tool result"| CL`;
 
 const MODEL_DIAGRAM = `graph TD
   U["👤 user"]
