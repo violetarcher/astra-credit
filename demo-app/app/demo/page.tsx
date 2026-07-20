@@ -498,7 +498,7 @@ const TABS = [
 ] as const;
 
 function DiagramsPanel() {
-  const [active, setActive] = useState<string>('arch');
+  const [active, setActive] = useState<string>('auth');
   const current = TABS.find(t => t.id === active)!;
 
   return (
