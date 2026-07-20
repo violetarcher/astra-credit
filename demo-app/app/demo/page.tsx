@@ -228,7 +228,8 @@ export default function DemoPanel() {
           <FgaModelEditor defaultValue={FGA_MODEL} />
         </div>
 
-        {/* Right — Tuples */}
+        {/* Right — Tuples + Scenario 5 + Reset */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.9rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -320,59 +321,60 @@ export default function DemoPanel() {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ── Quick Actions ──────────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginTop: '1.25rem' }}>
-
-        <section className="card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
-            <span style={{ fontSize: '0.78rem' }}>🔗</span>
-            <h2 style={sectionHead}>Scenario 5 — Add to joint-2026</h2>
-          </div>
-          <p style={hint}>Grant a user access to the joint mortgage account</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: '0.6rem' }}>
-            <div>
-              <label style={fieldLabel}>User (FGA ID)</label>
-              <input style={inputSm} type="text"
-                placeholder="violet.archer"
-                value={userId} onChange={e => setUserId(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && !addLoading && userId.trim() && handleAddApplicant()} />
+        {/* Scenario 5 + Reset — side by side below tuples */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+          <section className="card">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
+              <span style={{ fontSize: '0.78rem' }}>🔗</span>
+              <h2 style={sectionHead}>Scenario 5 — Add to joint-2026</h2>
             </div>
-            <div>
-              <label style={fieldLabel}>Relation</label>
-              <input style={{ ...inputSm, background: 'var(--table-head-bg)', color: 'var(--text-primary)' }} readOnly value="applicant" />
+            <p style={hint}>Grant a user access to the joint mortgage account</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: '0.6rem' }}>
+              <div>
+                <label style={fieldLabel}>User (FGA ID)</label>
+                <input style={inputSm} type="text"
+                  placeholder="violet.archer"
+                  value={userId} onChange={e => setUserId(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && !addLoading && userId.trim() && handleAddApplicant()} />
+              </div>
+              <div>
+                <label style={fieldLabel}>Relation</label>
+                <input style={{ ...inputSm, background: 'var(--input-ro-bg)', color: 'var(--text-primary)' }} readOnly value="applicant" />
+              </div>
+              <div>
+                <label style={fieldLabel}>Object</label>
+                <input style={{ ...inputSm, background: 'var(--input-ro-bg)', color: 'var(--text-primary)' }} readOnly value="mortgage_application:joint-2026" />
+              </div>
             </div>
-            <div>
-              <label style={fieldLabel}>Object</label>
-              <input style={{ ...inputSm, background: 'var(--table-head-bg)', color: 'var(--text-primary)' }} readOnly value="mortgage_application:joint-2026" />
+            <button className="btn-dark" style={{ ...btnPrimary, opacity: !userId.trim() || addLoading ? 0.4 : 1 }}
+              disabled={!userId.trim() || addLoading} onClick={handleAddApplicant}>
+              {addLoading ? 'Writing…' : 'Write tuple'}
+            </button>
+            {addStatus && <p style={{ fontSize: '0.75rem', marginTop: '0.5rem', color: addStatus.ok ? '#16a34a' : '#dc2626' }}>{addStatus.message}</p>}
+          </section>
+
+          <section className="card">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
+              <span style={{ fontSize: '0.78rem' }}>🔄</span>
+              <h2 style={sectionHead}>Reset Demo</h2>
             </div>
-          </div>
-          <button className="btn-dark" style={{ ...btnPrimary, opacity: !userId.trim() || addLoading ? 0.4 : 1 }}
-            disabled={!userId.trim() || addLoading} onClick={handleAddApplicant}>
-            {addLoading ? 'Writing…' : 'Write tuple'}
-          </button>
-          {addStatus && <p style={{ fontSize: '0.75rem', marginTop: '0.5rem', color: addStatus.ok ? '#16a34a' : '#dc2626' }}>{addStatus.message}</p>}
-        </section>
+            <p style={hint}>Deletes all tuples. Owner tuples are recreated on next login.</p>
+            <button className="btn-danger" style={{ ...btnDanger, opacity: resetLoading ? 0.5 : 1 }} disabled={resetLoading} onClick={handleReset}>
+              {resetLoading ? 'Resetting…' : 'Reset FGA store'}
+            </button>
+            {resetStatus && <p style={{ fontSize: '0.75rem', marginTop: '0.5rem', color: resetStatus.ok ? '#16a34a' : '#dc2626' }}>{resetStatus.message}</p>}
+          </section>
+        </div>
 
-        <section className="card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
-            <span style={{ fontSize: '0.78rem' }}>🔄</span>
-            <h2 style={sectionHead}>Reset Demo</h2>
-          </div>
-          <p style={hint}>Deletes all tuples. Owner tuples are recreated on next login.</p>
-          <button className="btn-danger" style={{ ...btnDanger, opacity: resetLoading ? 0.5 : 1 }} disabled={resetLoading} onClick={handleReset}>
-            {resetLoading ? 'Resetting…' : 'Reset FGA store'}
-          </button>
-          {resetStatus && <p style={{ fontSize: '0.75rem', marginTop: '0.5rem', color: resetStatus.ok ? '#16a34a' : '#dc2626' }}>{resetStatus.message}</p>}
-        </section>
-      </div>
-
-      {/* ── Diagrams + Prompts ─────────────────────────────────────────────── */}
-      <DiagramsPanel />
+        </div>{/* end right column wrapper */}
+      </div>{/* end main grid */}
 
       {/* ── FGA Activity Log ───────────────────────────────────────────────── */}
       <FgaLog />
+
+      {/* ── Diagrams + Prompts ─────────────────────────────────────────────── */}
+      <DiagramsPanel />
     </main>
   );
 }
