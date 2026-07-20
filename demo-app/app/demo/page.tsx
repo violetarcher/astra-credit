@@ -170,7 +170,7 @@ export default function DemoPanel() {
             <svg width="20" height="14" viewBox="0 0 20 14" fill="none">
               <rect y="0" width="20" height="2.5" rx="1.25" fill="white" opacity="0.85"/>
               <rect y="5.5" width="20" height="2.5" rx="1.25" fill="#1677ff"/>
-              <rect y="11" width="14" height="2.5" rx="1.25" fill="#13c2c2"/>
+              <rect y="11" width="14" height="2.5" rx="1.25" fill="#0f766e"/>
             </svg>
           </div>
           <div>
@@ -200,7 +200,7 @@ export default function DemoPanel() {
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.9rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#13c2c2', display: 'inline-block' }} />
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0f766e', display: 'inline-block' }} />
               <h2 style={{ ...sectionHead, margin: 0 }}>
                 Tuples{!tuplesLoading ? ` (${tuples.length})` : ''}
               </h2>
@@ -213,8 +213,8 @@ export default function DemoPanel() {
           {tuplesError && <p style={{ color: '#dc2626', fontSize: '0.75rem', marginBottom: '0.6rem' }}>{tuplesError}</p>}
 
           {/* Table */}
-          <div style={{ border: '1px solid #e5e7eb', borderRadius: 7, overflow: 'hidden', marginBottom: '1.25rem', maxHeight: 280, overflowY: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.76rem' }}>
+          <div style={{ border: '1px solid #e5e7eb', borderRadius: 7, overflowX: 'auto', overflowY: 'auto', marginBottom: '1.25rem', maxHeight: 280 }}>
+            <table style={{ width: '100%', minWidth: 580, borderCollapse: 'collapse', fontSize: '0.76rem' }}>
               <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                 <tr style={{ background: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
                   <th style={th}>User</th>
@@ -231,7 +231,7 @@ export default function DemoPanel() {
                   <tr key={i} style={{ borderBottom: '1px solid #f3f4f6', background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
                     <td style={{ ...td, color: '#1677ff' }}>{t.user}</td>
                     <td style={{ ...td, color: '#6d28d9', fontWeight: 500 }}>{t.relation}</td>
-                    <td style={{ ...td, color: '#13c2c2' }}>{t.object}</td>
+                    <td style={{ ...td, color: '#0f766e' }}>{t.object}</td>
                     <td style={{ ...td, color: '#6b7280' }} title={t.condition ? JSON.stringify(t.condition.context, null, 2) : undefined}>
                       {t.condition ? t.condition.name : '—'}
                     </td>
@@ -333,33 +333,38 @@ export default function DemoPanel() {
 
 // ─── Diagrams panel ───────────────────────────────────────────────────────────
 
-const ARCH_DIAGRAM = `graph LR
-  U["👤 User\\nBrowser"]
-  P["📱 User\\nPhone"]
+const AUTH_FLOW_DIAGRAM = `graph LR
+  U["👤 User"]
   CL["🤖 Claude.ai\\nMCP Client"]
-  M["⚙ MCP Server\\nNext.js /api/mcp"]
+  M["⚙ MCP Server\\n/api/mcp"]
+  A0["Auth0\\n/authorize · /token · JWKS"]
+
+  U -->|"① Add MCP integration URL"| CL
+  CL -->|"② OAuth 2.0 PKCE\\n(tpc_ CIMD client ID)"| A0
+  A0 -->|"③ Login page"| U
+  U -->|"④ Authenticate"| A0
+  A0 -->|"⑤ JWT access token\\n(sub + email claims)"| CL
+  CL -->|"⑥ Bearer JWT\\n+ JSON-RPC tool call"| M
+  M -->|"⑦ Verify JWT\\n(JWKS endpoint)"| A0
+  A0 -->|"⑧ Valid ✅\\nensureOwnerTuple"| M`;
+
+const TOOL_FLOW_DIAGRAM = `graph LR
+  CL["🤖 Claude.ai"]
+  M["⚙ MCP Server"]
   F["🗄 Auth0 FGA\\nAuthorization Store"]
+  A0["Auth0\\nCIBA + Guardian"]
+  P["📱 Phone\\nGuardian App"]
 
-  subgraph auth0["Auth0"]
-    AT["Token Service\\n/authorize · /token · JWKS"]
-    CB["CIBA + Guardian\\n/bc-authorize · push"]
-  end
-
-  U -->|"add integration"| CL
-  CL -->|"OAuth 2.0 PKCE\\ntpc_ CIMD"| AT
-  AT -->|"login page"| U
-  U -->|"credentials"| AT
-  AT -->|"JWT access token"| CL
-  CL -->|"Bearer JWT\\n+ tool call"| M
-  M -->|"verify JWT"| AT
-  M -->|"check permission\\nensureOwnerTuple"| F
-  F -->|"✅ allowed / ❌ denied"| M
-  M -->|"bc-authorize"| CB
-  CB -->|"Guardian push"| P
-  P -->|"tap Approve"| CB
-  CB -->|"CIBA token"| M
-  M -->|"write consent tuple"| F
-  M -->|"tool result"| CL`;
+  CL -->|"tool call\\n(Bearer JWT)"| M
+  M -->|"check permission"| F
+  F -->|"✅ allowed"| M
+  M -->|"tool result"| CL
+  F -->|"❌ denied\\n(no consent tuple)"| M
+  M -->|"bc-authorize\\n(CIBA)"| A0
+  A0 -->|"Guardian push"| P
+  P -->|"tap Approve"| A0
+  A0 -->|"CIBA token"| M
+  M -->|"write consented_agent tuple\\n(granted_at = now · 30d TTL)"| F`;
 
 const MODEL_DIAGRAM = `graph TD
   U["👤 user"]
@@ -485,7 +490,8 @@ const SCENARIOS = [
 ];
 
 const TABS = [
-  { id: 'arch',    label: 'System Architecture', chart: ARCH_DIAGRAM  },
+  { id: 'auth',    label: 'Auth Flow',            chart: AUTH_FLOW_DIAGRAM  },
+  { id: 'tool',    label: 'Tool / FGA Flow',      chart: TOOL_FLOW_DIAGRAM  },
   { id: 'model',   label: 'FGA Model',            chart: MODEL_DIAGRAM },
   { id: 'flows',   label: 'Demo Flows',            chart: FLOW_DIAGRAM  },
   { id: 'prompts', label: 'Demo Prompts',          chart: null          },
@@ -603,9 +609,6 @@ const th: React.CSSProperties = {
 
 const td: React.CSSProperties = {
   padding: '0.42rem 0.75rem',
-  maxWidth: 200,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
 };
 

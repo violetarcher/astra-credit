@@ -3,7 +3,7 @@
 import React, { useRef, useState } from 'react';
 
 // ── Token colors matching Auth0 FGA dashboard ─────────────────────────────────
-const C_TYPE  = '#13c2c2';  // type names
+const C_TYPE  = '#0f766e';  // type names (dark teal-green)
 const C_REL   = '#1677ff';  // relation names, references
 const C_STR   = '#d46b08';  // string literals
 const C_DIM   = '#8492a6';  // keywords: or, and, with
