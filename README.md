@@ -203,7 +203,32 @@ exports.onExecutePostLogin = async (event, api) => {
 
 ---
 
-## Running the demo
+## Using the deployed app (Vercel)
+
+The app is live at **`https://astra-credit.vercel.app`**.
+
+### Demo control panel
+
+Open `https://astra-credit.vercel.app` — sign in with Auth0, and you land on the FGA dashboard where you can view/create/delete tuples, reset the store, and reference the diagrams and scenario prompts.
+
+### Connecting Claude.ai
+
+1. In Claude.ai → **Settings → Integrations → Add integration**
+2. Enter: `https://astra-credit.vercel.app/api/mcp`
+3. When prompted for OAuth Client ID, enter: `https://claude.ai/oauth/mcp-oauth-client-metadata`
+4. Complete the Auth0 login flow — the same identity flows into the demo data
+
+### Before each demo run
+
+1. Open the demo panel → **Reset FGA store** — clears all tuples (owner tuple re-provisioned on next Claude tool call)
+2. Confirm Claude.ai shows the integration as connected
+3. Run scenarios in order: 1 → 2 → 3 → 4 → 5
+
+> **Note for SE setup:** The tpc_ (Claude.ai CIMD) app in Auth0 needs two client grants against the `https://astra-credit.vercel.app/` API — a machine-to-machine grant and a user client grant. Without these, Claude.ai will fail silently to obtain a token.
+
+---
+
+## Running the demo locally (ngrok)
 
 Three things need to be running: the Next.js app, ngrok, and Claude.ai.
 
