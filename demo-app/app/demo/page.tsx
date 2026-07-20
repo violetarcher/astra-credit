@@ -1,8 +1,33 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import MermaidDiagram from '@/components/MermaidDiagram';
 import FgaModelEditor from '@/components/FgaModelEditor';
+
+function useDarkMode() {
+  const [dark, setDark] = useState(false);
+  useEffect(() => {
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark') { document.documentElement.setAttribute('data-theme', 'dark'); setDark(true); }
+  }, []);
+  function toggle() {
+    const next = !dark;
+    setDark(next);
+    document.documentElement.setAttribute('data-theme', next ? 'dark' : '');
+    localStorage.setItem('theme', next ? 'dark' : 'light');
+  }
+  return { dark, toggle };
+}
+
+type FgaLogEntry = {
+  id: string;
+  ts: number;
+  op: 'check' | 'write' | 'delete' | 'read' | 'ensure';
+  user: string;
+  relation: string;
+  object: string;
+  result?: 'allowed' | 'denied' | 'ok' | 'error';
+};
 
 type Tuple = {
   user: string;
@@ -38,6 +63,8 @@ condition time_bounded_consent(current_time: timestamp, granted_at: timestamp) {
 }`;
 
 export default function DemoPanel() {
+  const { dark, toggle: toggleDark } = useDarkMode();
+
   // Tuples
   const [tuples, setTuples] = useState<Tuple[]>([]);
   const [tuplesLoading, setTuplesLoading] = useState(false);
@@ -174,13 +201,18 @@ export default function DemoPanel() {
             </svg>
           </div>
           <div>
-            <div style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.2 }}>AstraCredit</div>
-            <div style={{ fontSize: '0.68rem', color: '#6b7280', lineHeight: 1.2 }}>FGA Dashboard</div>
+            <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>AstraCredit</div>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', lineHeight: 1.2 }}>FGA Dashboard</div>
           </div>
         </div>
-        <span style={{ fontSize: '0.7rem', color: '#9ca3af', background: '#f3f4f6', border: '1px solid #e5e7eb', padding: '0.25rem 0.65rem', borderRadius: 999 }}>
-          store: {process.env.NEXT_PUBLIC_FGA_STORE_LABEL ?? 'archfaktor'}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', background: 'var(--store-badge-bg)', border: '1px solid var(--card-border)', padding: '0.25rem 0.65rem', borderRadius: 999 }}>
+            store: {process.env.NEXT_PUBLIC_FGA_STORE_LABEL ?? 'archfaktor'}
+          </span>
+          <button className="theme-toggle" onClick={toggleDark} title={dark ? 'Switch to light mode' : 'Switch to dark mode'}>
+            {dark ? '☀️' : '🌙'}
+          </button>
+        </div>
       </div>
 
       {/* ── Two-column: model | tuples ─────────────────────────────────────── */}
@@ -213,10 +245,10 @@ export default function DemoPanel() {
           {tuplesError && <p style={{ color: '#dc2626', fontSize: '0.75rem', marginBottom: '0.6rem' }}>{tuplesError}</p>}
 
           {/* Table */}
-          <div style={{ border: '1px solid #e5e7eb', borderRadius: 7, overflowX: 'auto', overflowY: 'auto', marginBottom: '1.25rem', maxHeight: 280 }}>
+          <div style={{ border: '1px solid var(--card-border)', borderRadius: 7, overflowX: 'auto', overflowY: 'auto', marginBottom: '1.25rem', maxHeight: 280 }}>
             <table style={{ width: '100%', minWidth: 580, borderCollapse: 'collapse', fontSize: '0.76rem' }}>
               <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
-                <tr style={{ background: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
+                <tr style={{ background: 'var(--table-head-bg)', borderBottom: '1px solid var(--card-border)' }}>
                   <th style={th}>User</th>
                   <th style={th}>Relation</th>
                   <th style={th}>Object</th>
@@ -226,13 +258,13 @@ export default function DemoPanel() {
               </thead>
               <tbody>
                 {tuples.length === 0 && !tuplesLoading ? (
-                  <tr><td colSpan={5} style={{ padding: '1.25rem', textAlign: 'center', color: '#9ca3af', fontSize: '0.76rem' }}>No tuples in store</td></tr>
+                  <tr><td colSpan={5} style={{ padding: '1.25rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.76rem' }}>No tuples in store</td></tr>
                 ) : tuples.map((t, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid #f3f4f6', background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
+                  <tr key={i} style={{ borderBottom: '1px solid var(--table-row-border)', background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
                     <td style={{ ...td, color: '#1677ff' }}>{t.user}</td>
                     <td style={{ ...td, color: '#6d28d9', fontWeight: 500 }}>{t.relation}</td>
                     <td style={{ ...td, color: '#0f766e' }}>{t.object}</td>
-                    <td style={{ ...td, color: '#6b7280' }} title={t.condition ? JSON.stringify(t.condition.context, null, 2) : undefined}>
+                    <td style={{ ...td, color: 'var(--text-secondary)' }} title={t.condition ? JSON.stringify(t.condition.context, null, 2) : undefined}>
                       {t.condition ? t.condition.name : '—'}
                     </td>
                     <td style={{ ...td, textAlign: 'center' }}>
@@ -245,8 +277,8 @@ export default function DemoPanel() {
           </div>
 
           {/* Add tuple form */}
-          <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: '1rem' }}>
-            <h3 style={{ fontSize: '0.8rem', fontWeight: 600, margin: '0 0 0.75rem', color: '#374151' }}>Add Tuple</h3>
+          <div style={{ borderTop: '1px solid var(--divider)', paddingTop: '1rem' }}>
+            <h3 style={{ fontSize: '0.8rem', fontWeight: 600, margin: '0 0 0.75rem', color: 'var(--text-primary)' }}>Add Tuple</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.6rem', marginBottom: '0.6rem' }}>
               {[
                 { label: 'User', val: newUser, set: setNewUser, ph: 'user:violet.archer' },
@@ -260,14 +292,14 @@ export default function DemoPanel() {
               ))}
             </div>
 
-            <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.72rem', color: '#6b7280', padding: 0, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: 4 }}
+            <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.72rem', color: 'var(--text-secondary)', padding: 0, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: 4 }}
               onClick={() => setShowCondition(v => !v)}>
               <span style={{ fontFamily: 'monospace' }}>{showCondition ? '▾' : '▸'}</span>
               Condition {showCondition ? '' : '(optional)'}
             </button>
 
             {showCondition && (
-              <div style={{ background: '#f8fafd', border: '1px solid #e0e6f0', borderRadius: 7, padding: '0.75rem', marginBottom: '0.6rem', display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.6rem' }}>
+              <div style={{ background: 'var(--preview-bg)', border: '1px solid #e0e6f0', borderRadius: 7, padding: '0.75rem', marginBottom: '0.6rem', display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.6rem' }}>
                 <div>
                   <label style={fieldLabel}>Condition Name</label>
                   <input style={inputSm} value={conditionName} onChange={e => setConditionName(e.target.value)} />
@@ -298,17 +330,28 @@ export default function DemoPanel() {
             <span style={{ fontSize: '0.78rem' }}>🔗</span>
             <h2 style={sectionHead}>Scenario 5 — Add to joint-2026</h2>
           </div>
-          <p style={hint}>Writes <code style={codeInline}>user:&#123;id&#125; applicant mortgage_application:joint-2026</code></p>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <input className="input-full" style={{ ...inputFull, flex: 1, marginBottom: 0 }} type="text"
-              placeholder="fga-user-id  (e.g. violet.archer)"
-              value={userId} onChange={e => setUserId(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && !addLoading && userId.trim() && handleAddApplicant()} />
-            <button className="btn-dark" style={{ ...btnPrimary, opacity: !userId.trim() || addLoading ? 0.4 : 1, whiteSpace: 'nowrap' }}
-              disabled={!userId.trim() || addLoading} onClick={handleAddApplicant}>
-              {addLoading ? 'Writing…' : 'Add'}
-            </button>
+          <p style={hint}>Grant a user access to the joint mortgage account</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: '0.6rem' }}>
+            <div>
+              <label style={fieldLabel}>User (FGA ID)</label>
+              <input style={inputSm} type="text"
+                placeholder="violet.archer"
+                value={userId} onChange={e => setUserId(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && !addLoading && userId.trim() && handleAddApplicant()} />
+            </div>
+            <div>
+              <label style={fieldLabel}>Relation</label>
+              <input style={{ ...inputSm, background: 'var(--table-head-bg)', color: 'var(--text-primary)' }} readOnly value="applicant" />
+            </div>
+            <div>
+              <label style={fieldLabel}>Object</label>
+              <input style={{ ...inputSm, background: 'var(--table-head-bg)', color: 'var(--text-primary)' }} readOnly value="mortgage_application:joint-2026" />
+            </div>
           </div>
+          <button className="btn-dark" style={{ ...btnPrimary, opacity: !userId.trim() || addLoading ? 0.4 : 1 }}
+            disabled={!userId.trim() || addLoading} onClick={handleAddApplicant}>
+            {addLoading ? 'Writing…' : 'Write tuple'}
+          </button>
           {addStatus && <p style={{ fontSize: '0.75rem', marginTop: '0.5rem', color: addStatus.ok ? '#16a34a' : '#dc2626' }}>{addStatus.message}</p>}
         </section>
 
@@ -327,6 +370,9 @@ export default function DemoPanel() {
 
       {/* ── Diagrams + Prompts ─────────────────────────────────────────────── */}
       <DiagramsPanel />
+
+      {/* ── FGA Activity Log ───────────────────────────────────────────────── */}
+      <FgaLog />
     </main>
   );
 }
@@ -509,7 +555,7 @@ function DiagramsPanel() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #e5e7eb', marginBottom: '1.25rem' }}>
+      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--card-border)', marginBottom: '1.25rem' }}>
         {TABS.map(t => (
           <button
             key={t.id}
@@ -548,14 +594,14 @@ function DiagramsPanel() {
 function PromptsPanel() {
   return (
     <div>
-      <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: 0, marginBottom: '1.25rem' }}>
+      <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 0, marginBottom: '1.25rem' }}>
         Run these scenarios in order. Reset the FGA store between demo runs.
       </p>
       {SCENARIOS.map(s => (
         <div key={s.num} className="scenario-card">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.6rem' }}>
-            <span style={{ fontWeight: 700, fontSize: '0.75rem', color: '#374151' }}>Scenario {s.num}</span>
-            <span style={{ fontWeight: 600, fontSize: '0.82rem', color: '#0f172a' }}>{s.label}</span>
+            <span style={{ fontWeight: 700, fontSize: '0.75rem', color: 'var(--text-primary)' }}>Scenario {s.num}</span>
+            <span style={{ fontWeight: 600, fontSize: '0.82rem', color: 'var(--text-primary)' }}>{s.label}</span>
             <span className={`badge ${s.badge}`}>{s.badgeText}</span>
           </div>
 
@@ -565,17 +611,159 @@ function PromptsPanel() {
             ))}
           </div>
 
-          <div style={{ fontSize: '0.73rem', color: '#374151', marginBottom: '0.35rem' }}>
-            <span style={{ color: '#6b7280', fontWeight: 500 }}>FGA: </span>{s.fga}
+          <div style={{ fontSize: '0.73rem', color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
+            <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>FGA: </span>{s.fga}
           </div>
-          <div style={{ fontSize: '0.73rem', color: '#374151', marginBottom: '0.35rem' }}>
-            <span style={{ color: '#6b7280', fontWeight: 500 }}>What happens: </span>{s.what}
+          <div style={{ fontSize: '0.73rem', color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
+            <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>What happens: </span>{s.what}
           </div>
-          <div style={{ fontSize: '0.73rem', borderTop: '1px solid #e9ebef', paddingTop: '0.35rem', marginTop: '0.35rem', fontStyle: 'italic', color: '#4b5563' }}>
+          <div style={{ fontSize: '0.73rem', borderTop: '1px solid var(--card-border)', paddingTop: '0.35rem', marginTop: '0.35rem', fontStyle: 'italic', color: '#4b5563' }}>
             💬 {s.talk}
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+// ─── FGA Activity Log ─────────────────────────────────────────────────────────
+
+const OP_META: Record<string, { label: string; color: string; bg: string }> = {
+  check:  { label: 'CHECK',  color: '#1d4ed8', bg: '#dbeafe' },
+  write:  { label: 'WRITE',  color: '#166534', bg: '#dcfce7' },
+  delete: { label: 'DELETE', color: '#92400e', bg: '#fef3c7' },
+  read:   { label: 'READ',   color: 'var(--text-secondary)', bg: '#f3f4f6' },
+  ensure: { label: 'ENSURE', color: '#6d28d9', bg: '#ede9fe' },
+};
+
+const RESULT_META: Record<string, { icon: string; color: string }> = {
+  allowed: { icon: '✅', color: '#15803d' },
+  denied:  { icon: '❌', color: '#b91c1c' },
+  ok:      { icon: '✓',  color: '#15803d' },
+  error:   { icon: '!',  color: '#b91c1c' },
+};
+
+function FgaLog() {
+  const [entries, setEntries] = useState<FgaLogEntry[]>([]);
+  const [live, setLive] = useState(true);
+  const [open, setOpen] = useState(true);
+  const sinceRef = useRef<number>(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const fetchEvents = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/demo/fga-events?since=${sinceRef.current}`);
+      const data = await res.json();
+      if (data.events?.length) {
+        sinceRef.current = data.ts;
+        setEntries(prev => {
+          const combined = [...data.events, ...prev].slice(0, 120);
+          return combined;
+        });
+      }
+    } catch { /* silent */ }
+  }, []);
+
+  useEffect(() => {
+    fetchEvents();
+    if (!live) return;
+    const id = setInterval(fetchEvents, 1500);
+    return () => clearInterval(id);
+  }, [fetchEvents, live]);
+
+  async function handleClear() {
+    await fetch('/api/demo/fga-events', { method: 'DELETE' });
+    setEntries([]);
+    sinceRef.current = 0;
+  }
+
+  function relTime(ts: number) {
+    const s = Math.floor((Date.now() - ts) / 1000);
+    if (s < 5) return 'just now';
+    if (s < 60) return `${s}s ago`;
+    return `${Math.floor(s / 60)}m ago`;
+  }
+
+  return (
+    <div className="card" style={{ marginTop: '1.25rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: open ? '0.9rem' : 0 }}>
+        <button
+          onClick={() => setOpen(v => !v)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: 0, fontFamily: 'inherit' }}
+        >
+          <span style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{open ? '▾' : '▸'}</span>
+          <span style={{ fontSize: '0.78rem' }}>🔍</span>
+          <h2 style={{ ...sectionHead, margin: 0 }}>FGA Activity Log</h2>
+          {entries.length > 0 && (
+            <span style={{ fontSize: '0.68rem', background: 'var(--table-head-bg)', border: '1px solid var(--card-border)', borderRadius: 999, padding: '0.1rem 0.5rem', color: 'var(--text-primary)' }}>
+              {entries.length}
+            </span>
+          )}
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <button
+            onClick={() => setLive(v => !v)}
+            style={{ fontFamily: 'inherit', fontSize: '0.7rem', padding: '0.2rem 0.6rem', borderRadius: 999, border: '1px solid', cursor: 'pointer', background: 'none',
+              borderColor: live ? '#16a34a' : '#d1d5db', color: live ? '#16a34a' : '#9ca3af' }}
+          >
+            {live ? '● Live' : '○ Paused'}
+          </button>
+          <button className="btn-outline" style={btnOutline} onClick={handleClear}>Clear</button>
+          <button className="btn-outline" style={btnOutline} onClick={fetchEvents}>↻</button>
+        </div>
+      </div>
+
+      {open && (
+        <div
+          ref={scrollRef}
+          style={{ maxHeight: 280, overflowY: 'auto', border: '1px solid var(--card-border)', borderRadius: 7, background: 'var(--table-alt-bg)' }}
+        >
+          {entries.length === 0 ? (
+            <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.75rem', padding: '1.5rem' }}>
+              No activity yet — run a scenario in Claude.ai
+            </p>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.73rem' }}>
+              <thead style={{ position: 'sticky', top: 0, background: 'var(--table-head-bg)', zIndex: 1 }}>
+                <tr style={{ borderBottom: '1px solid var(--card-border)' }}>
+                  <th style={{ ...th, width: 72 }}>Time</th>
+                  <th style={{ ...th, width: 72 }}>Op</th>
+                  <th style={th}>User</th>
+                  <th style={th}>Relation</th>
+                  <th style={th}>Object</th>
+                  <th style={{ ...th, width: 80 }}>Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map((e, i) => {
+                  const op = OP_META[e.op] ?? OP_META.read;
+                  const res = e.result ? RESULT_META[e.result] : null;
+                  return (
+                    <tr key={e.id} style={{ borderBottom: '1px solid var(--table-row-border)', background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
+                      <td style={{ ...td, color: 'var(--text-muted)', fontSize: '0.68rem' }}>{relTime(e.ts)}</td>
+                      <td style={{ ...td }}>
+                        <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '0.1rem 0.4rem', borderRadius: 4, background: op.bg, color: op.color, letterSpacing: '0.04em' }}>
+                          {op.label}
+                        </span>
+                      </td>
+                      <td style={{ ...td, color: '#1677ff' }}>{e.user}</td>
+                      <td style={{ ...td, color: '#6d28d9' }}>{e.relation}</td>
+                      <td style={{ ...td, color: '#0f766e' }}>{e.object}</td>
+                      <td style={{ ...td }}>
+                        {res && (
+                          <span style={{ color: res.color, fontWeight: 600 }}>
+                            {res.icon} {e.result}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -591,7 +779,7 @@ const sectionHead: React.CSSProperties = {
 
 const hint: React.CSSProperties = {
   fontSize: '0.72rem',
-  color: '#6b7280',
+  color: 'var(--text-secondary)',
   marginTop: 0,
   marginBottom: '0.85rem',
 };
@@ -601,7 +789,7 @@ const th: React.CSSProperties = {
   padding: '0.45rem 0.75rem',
   fontWeight: 600,
   fontSize: '0.67rem',
-  color: '#6b7280',
+  color: 'var(--text-secondary)',
   textTransform: 'uppercase',
   letterSpacing: '0.05em',
   whiteSpace: 'nowrap',
@@ -615,7 +803,7 @@ const td: React.CSSProperties = {
 const fieldLabel: React.CSSProperties = {
   display: 'block',
   fontSize: '0.67rem',
-  color: '#6b7280',
+  color: 'var(--text-secondary)',
   textTransform: 'uppercase',
   letterSpacing: '0.04em',
   marginBottom: '0.2rem',
@@ -630,20 +818,9 @@ const inputSm: React.CSSProperties = {
   border: '1px solid #d1d5db',
   borderRadius: 5,
   boxSizing: 'border-box',
-  background: '#fff',
+  background: 'var(--card-bg)',
 };
 
-const inputFull: React.CSSProperties = {
-  display: 'block',
-  width: '100%',
-  fontFamily: 'inherit',
-  fontSize: '0.85rem',
-  padding: '0.45rem 0.65rem',
-  border: '1px solid #d1d5db',
-  borderRadius: 6,
-  boxSizing: 'border-box',
-  background: '#fff',
-};
 
 const btnPrimary: React.CSSProperties = {
   fontFamily: 'inherit',
@@ -660,9 +837,9 @@ const btnOutline: React.CSSProperties = {
   fontFamily: 'inherit',
   fontSize: '0.72rem',
   padding: '0.28rem 0.65rem',
-  background: '#f9fafb',
-  color: '#374151',
-  border: '1px solid #e5e7eb',
+  background: 'var(--btn-outline-bg)',
+  color: 'var(--text-primary)',
+  border: '1px solid var(--card-border)',
   borderRadius: 5,
   cursor: 'pointer',
 };
@@ -689,10 +866,3 @@ const deleteBtn: React.CSSProperties = {
   opacity: 0.65,
 };
 
-const codeInline: React.CSSProperties = {
-  background: '#f3f4f6',
-  border: '1px solid #e5e7eb',
-  borderRadius: 4,
-  padding: '0.1rem 0.35rem',
-  fontSize: '0.72rem',
-};

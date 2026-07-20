@@ -131,7 +131,7 @@ export default function FgaModelEditor({ defaultValue, height = 480 }: { default
   };
 
   return (
-    <div style={{ position: 'relative', height, borderRadius: 8, overflow: 'hidden', border: '1px solid #e0e6f0', background: '#f8fafd' }}>
+    <div style={{ position: 'relative', height, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--preview-border)', background: 'var(--preview-bg)' }}>
       {/* Syntax-highlighted layer */}
       <pre
         ref={preRef}
@@ -141,7 +141,7 @@ export default function FgaModelEditor({ defaultValue, height = 480 }: { default
           position: 'absolute',
           inset: 0,
           margin: 0,
-          color: '#1f2937',
+          color: 'var(--text-primary)',
           background: 'transparent',
           pointerEvents: 'none',
           overflow: 'hidden',

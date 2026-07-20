@@ -4,9 +4,10 @@ import { checkPermission } from '@/lib/fga';
 export const jointApplicationTool: Tool = {
   name: 'get_joint_application_data',
   description:
-    'Retrieves data for a shared AstraCredit account. ' +
-    'Access is controlled by Auth0 FGA — only users listed as members can view this account. ' +
-    'If access is denied, inform the user and offer to call add_me_as_account_member if they confirm they should have access.',
+    'Retrieves data for a shared AstraCredit mortgage account. ' +
+    'Access is controlled by Auth0 FGA — only users listed as applicants can view this account. ' +
+    'Always tell the user: (1) that you are calling this tool, (2) that Auth0 FGA is checking can_view on mortgage_application, and (3) whether access was granted or denied and why. ' +
+    'If denied, tell the user they are not yet an applicant on this account and that once they are added by an authorized party, they can ask again.',
   inputSchema: {
     type: 'object',
     properties: {

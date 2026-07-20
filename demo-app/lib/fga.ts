@@ -1,4 +1,5 @@
 import { OpenFgaClient, CredentialsMethod } from '@openfga/sdk';
+import { log } from './fga-logger';
 
 export const fgaClient = new OpenFgaClient({
   apiUrl: process.env.FGA_API_URL!,
@@ -23,15 +24,13 @@ export async function checkPermission(
     user,
     relation,
     object,
-    context: {
-      current_time: new Date().toISOString(),
-    },
+    context: { current_time: new Date().toISOString() },
   });
-  return allowed ?? false;
+  const result = allowed ?? false;
+  log({ op: 'check', user, relation, object, result: result ? 'allowed' : 'denied' });
+  return result;
 }
 
-// Provisions the owner tuple for a user on first login.
-// Safe to call on every request — no-ops if the tuple already exists.
 export async function ensureOwnerTuple(fgaUserId: string): Promise<void> {
   const { tuples } = await fgaClient.read({
     user: `user:${fgaUserId}`,
@@ -42,24 +41,16 @@ export async function ensureOwnerTuple(fgaUserId: string): Promise<void> {
   if (tuples.length === 0) {
     try {
       await fgaClient.write({
-        writes: [
-          {
-            user: `user:${fgaUserId}`,
-            relation: 'owner',
-            object: `credit_profile:${fgaUserId}`,
-          },
-        ],
+        writes: [{ user: `user:${fgaUserId}`, relation: 'owner', object: `credit_profile:${fgaUserId}` }],
       });
+      log({ op: 'ensure', user: `user:${fgaUserId}`, relation: 'owner', object: `credit_profile:${fgaUserId}`, result: 'ok' });
     } catch (e: unknown) {
-      // Ignore duplicate tuple errors — another request beat us to it
       const msg = (e as Error)?.message ?? '';
       if (!msg.includes('already exists')) throw e;
     }
   }
 }
 
-// Writes the time-bounded consent tuple on CIBA approval.
-// agent:claude consented_agent credit_profile:{userId}
 export async function writeConsentTuple(fgaUserId: string): Promise<void> {
   await fgaClient.write({
     writes: [
@@ -69,11 +60,10 @@ export async function writeConsentTuple(fgaUserId: string): Promise<void> {
         object: `credit_profile:${fgaUserId}`,
         condition: {
           name: 'time_bounded_consent',
-          context: {
-            granted_at: new Date().toISOString(),
-          },
+          context: { granted_at: new Date().toISOString() },
         },
       },
     ],
   });
+  log({ op: 'write', user: 'agent:claude', relation: 'consented_agent', object: `credit_profile:${fgaUserId}`, result: 'ok' });
 }

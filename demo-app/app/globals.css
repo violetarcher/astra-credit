@@ -1,18 +1,71 @@
 *, *::before, *::after { box-sizing: border-box; }
 
+/* ── CSS custom properties ─────────────────────────────────────────────────── */
+:root {
+  --page-bg:          #f0f2f5;
+  --card-bg:          #fff;
+  --card-border:      #e5e7eb;
+  --card-shadow:      0 1px 3px rgba(0,0,0,0.06);
+  --text-primary:     #0f172a;
+  --text-secondary:   #6b7280;
+  --text-muted:       #9ca3af;
+  --input-bg:         #fff;
+  --input-border:     #d1d5db;
+  --input-ro-bg:      #f3f4f6;
+  --table-head-bg:    #f3f4f6;
+  --table-head-border:#e5e7eb;
+  --table-alt-bg:     #fafafa;
+  --table-row-border: #f3f4f6;
+  --preview-bg:       #f8fafd;
+  --preview-border:   #e0e6f0;
+  --scenario-bg:      #fafbfc;
+  --divider:          #f0f2f5;
+  --btn-outline-bg:   #f9fafb;
+  --btn-outline-hover:#e9ebef;
+  --store-badge-bg:   #f3f4f6;
+}
+
+[data-theme="dark"] {
+  --page-bg:          #0d1117;
+  --card-bg:          #161b22;
+  --card-border:      #30363d;
+  --card-shadow:      0 1px 3px rgba(0,0,0,0.4);
+  --text-primary:     #e6edf3;
+  --text-secondary:   #8b949e;
+  --text-muted:       #6e7681;
+  --input-bg:         #0d1117;
+  --input-border:     #30363d;
+  --input-ro-bg:      #161b22;
+  --table-head-bg:    #1c2128;
+  --table-head-border:#30363d;
+  --table-alt-bg:     #0d1117;
+  --table-row-border: #1c2128;
+  --preview-bg:       #0d1117;
+  --preview-border:   #30363d;
+  --scenario-bg:      #0d1117;
+  --divider:          #1c2128;
+  --btn-outline-bg:   #1c2128;
+  --btn-outline-hover:#21262d;
+  --store-badge-bg:   #1c2128;
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────────── */
 body {
   margin: 0;
-  background: #f0f2f5;
+  background: var(--page-bg);
+  color: var(--text-primary);
   font-family: ui-monospace, "SF Mono", Menlo, "Cascadia Code", monospace;
+  transition: background 0.2s, color 0.2s;
 }
 
 button { transition: background 0.12s, opacity 0.12s, color 0.12s; }
 
+/* ── Button hover states ────────────────────────────────────────────────────── */
 .btn-dark:hover:not(:disabled)   { background: #333 !important; }
-.btn-outline:hover:not(:disabled) { background: #e9ebef !important; }
+.btn-outline:hover:not(:disabled) { background: var(--btn-outline-hover) !important; }
 .btn-danger:hover:not(:disabled)  { background: #b91c1c !important; }
 .btn-delete:hover { opacity: 1 !important; color: #b91c1c !important; }
-.tab-btn:hover:not([data-active="true"]) { color: #374151 !important; }
+.tab-btn:hover:not([data-active="true"]) { color: var(--text-primary) !important; }
 
 input:focus, textarea:focus {
   outline: none;
@@ -20,28 +73,29 @@ input:focus, textarea:focus {
   box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.15);
 }
 
+/* ── Cards ──────────────────────────────────────────────────────────────────── */
 .card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
   border-radius: 10px;
   padding: 1.25rem 1.5rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  box-shadow: var(--card-shadow);
+  transition: background 0.2s, border-color 0.2s;
 }
 
-.card-accent-blue {
-  border-left: 3px solid #1677ff;
-}
+.card-accent-blue { border-left: 3px solid #1677ff; }
 
+/* ── Scenario cards ─────────────────────────────────────────────────────────── */
 .scenario-card {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--card-border);
   border-radius: 8px;
   padding: 1rem 1.25rem;
   margin-bottom: 0.85rem;
-  background: #fafbfc;
+  background: var(--scenario-bg);
 }
-
 .scenario-card:last-child { margin-bottom: 0; }
 
+/* ── Prompt chips ───────────────────────────────────────────────────────────── */
 .prompt-chip {
   display: inline-block;
   background: #f0f6ff;
@@ -53,6 +107,13 @@ input:focus, textarea:focus {
   margin: 0.2rem 0.2rem 0.2rem 0;
 }
 
+[data-theme="dark"] .prompt-chip {
+  background: #1a2840;
+  border-color: #1e3a5f;
+  color: #60a5fa;
+}
+
+/* ── Badges ─────────────────────────────────────────────────────────────────── */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -69,3 +130,22 @@ input:focus, textarea:focus {
 .badge-blue   { background: #dbeafe; color: #1d4ed8; }
 .badge-amber  { background: #fef3c7; color: #92400e; }
 .badge-purple { background: #ede9fe; color: #6d28d9; }
+
+[data-theme="dark"] .badge-green  { background: #14532d40; color: #4ade80; }
+[data-theme="dark"] .badge-red    { background: #7f1d1d40; color: #f87171; }
+[data-theme="dark"] .badge-blue   { background: #1e3a5f40; color: #60a5fa; }
+[data-theme="dark"] .badge-amber  { background: #78350f40; color: #fbbf24; }
+[data-theme="dark"] .badge-purple { background: #4c1d9540; color: #c084fc; }
+
+/* ── Dark mode toggle button ────────────────────────────────────────────────── */
+.theme-toggle {
+  background: var(--store-badge-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
+}
+.theme-toggle:hover { color: var(--text-primary); }
