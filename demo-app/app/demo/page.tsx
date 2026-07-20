@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import MermaidDiagram from '@/components/MermaidDiagram';
+import FgaModelEditor from '@/components/FgaModelEditor';
 
 type Tuple = {
   user: string;
@@ -67,11 +68,8 @@ export default function DemoPanel() {
     try {
       const res = await fetch('/api/demo/tuples');
       const data = await res.json();
-      if (res.ok) {
-        setTuples(data.tuples ?? []);
-      } else {
-        setTuplesError(data.error ?? 'Failed to load tuples');
-      }
+      if (res.ok) setTuples(data.tuples ?? []);
+      else setTuplesError(data.error ?? 'Failed to load tuples');
     } catch {
       setTuplesError('Network error');
     } finally {
@@ -87,10 +85,7 @@ export default function DemoPanel() {
     let conditionPayload: { name: string; context?: Record<string, unknown> } | undefined;
     if (showCondition && conditionName.trim()) {
       try {
-        conditionPayload = {
-          name: conditionName.trim(),
-          context: JSON.parse(conditionContext),
-        };
+        conditionPayload = { name: conditionName.trim(), context: JSON.parse(conditionContext) };
       } catch {
         setCreateStatus({ ok: false, message: 'Invalid JSON in condition context' });
         return;
@@ -103,19 +98,11 @@ export default function DemoPanel() {
       const res = await fetch('/api/demo/tuples', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user: newUser.trim(),
-          relation: newRelation.trim(),
-          object: newObject.trim(),
-          condition: conditionPayload,
-        }),
+        body: JSON.stringify({ user: newUser.trim(), relation: newRelation.trim(), object: newObject.trim(), condition: conditionPayload }),
       });
       if (res.ok) {
         setCreateStatus({ ok: true, message: '✓ Tuple written' });
-        setNewUser('');
-        setNewRelation('');
-        setNewObject('');
-        setShowCondition(false);
+        setNewUser(''); setNewRelation(''); setNewObject(''); setShowCondition(false);
         loadTuples();
       } else {
         const data = await res.json();
@@ -136,15 +123,12 @@ export default function DemoPanel() {
         body: JSON.stringify({ user: t.user, relation: t.relation, object: t.object }),
       });
       loadTuples();
-    } catch {
-      // silent — table will show stale row until next refresh
-    }
+    } catch { /* silent */ }
   }
 
   async function handleAddApplicant() {
     if (!userId.trim()) return;
-    setAddLoading(true);
-    setAddStatus(null);
+    setAddLoading(true); setAddStatus(null);
     try {
       const res = await fetch('/api/demo/add-joint-applicant', {
         method: 'POST',
@@ -152,116 +136,84 @@ export default function DemoPanel() {
         body: JSON.stringify({ fgaUserId: userId.trim() }),
       });
       const data = await res.json();
-      setAddStatus(
-        res.ok
-          ? { ok: true, message: `✓ ${data.tuple}` }
-          : { ok: false, message: data.error ?? 'Failed' }
-      );
-      if (res.ok) {
-        setUserId('');
-        loadTuples();
-      }
-    } catch {
-      setAddStatus({ ok: false, message: 'Network error' });
-    } finally {
-      setAddLoading(false);
-    }
+      setAddStatus(res.ok ? { ok: true, message: `✓ ${data.tuple}` } : { ok: false, message: data.error ?? 'Failed' });
+      if (res.ok) { setUserId(''); loadTuples(); }
+    } catch { setAddStatus({ ok: false, message: 'Network error' }); }
+    finally { setAddLoading(false); }
   }
 
   async function handleReset() {
-    setResetLoading(true);
-    setResetStatus(null);
-    setAddStatus(null);
+    setResetLoading(true); setResetStatus(null); setAddStatus(null);
     try {
       const res = await fetch('/api/demo/reset', { method: 'POST' });
       const data = await res.json();
-      setResetStatus(
-        res.ok
-          ? { ok: true, message: `✓ Cleared ${data.deleted} tuple${data.deleted !== 1 ? 's' : ''}` }
-          : { ok: false, message: 'Reset failed' }
-      );
+      setResetStatus(res.ok
+        ? { ok: true, message: `✓ Cleared ${data.deleted} tuple${data.deleted !== 1 ? 's' : ''}` }
+        : { ok: false, message: 'Reset failed' });
       if (res.ok) loadTuples();
-    } catch {
-      setResetStatus({ ok: false, message: 'Network error' });
-    } finally {
-      setResetLoading(false);
-    }
+    } catch { setResetStatus({ ok: false, message: 'Network error' }); }
+    finally { setResetLoading(false); }
   }
 
-  const canCreate = newUser.trim() && newRelation.trim() && newObject.trim() && !createLoading;
+  const canCreate = !!(newUser.trim() && newRelation.trim() && newObject.trim() && !createLoading);
 
   return (
-    <main style={{ fontFamily: 'monospace', padding: '2rem', maxWidth: 1280 }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1.75rem' }}>
-        <h1 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>
-          AstraCredit — FGA Dashboard
-        </h1>
-        <span style={{ fontSize: '0.72rem', color: '#9ca3af' }}>
+    <main style={{ fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace', padding: '1.75rem 2rem', maxWidth: 1300 }}>
+
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{
+            width: 34, height: 34, borderRadius: 8, background: '#0f172a',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+            <svg width="20" height="14" viewBox="0 0 20 14" fill="none">
+              <rect y="0" width="20" height="2.5" rx="1.25" fill="white" opacity="0.85"/>
+              <rect y="5.5" width="20" height="2.5" rx="1.25" fill="#1677ff"/>
+              <rect y="11" width="14" height="2.5" rx="1.25" fill="#13c2c2"/>
+            </svg>
+          </div>
+          <div>
+            <div style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.2 }}>AstraCredit</div>
+            <div style={{ fontSize: '0.68rem', color: '#6b7280', lineHeight: 1.2 }}>FGA Dashboard</div>
+          </div>
+        </div>
+        <span style={{ fontSize: '0.7rem', color: '#9ca3af', background: '#f3f4f6', border: '1px solid #e5e7eb', padding: '0.25rem 0.65rem', borderRadius: 999 }}>
           store: {process.env.NEXT_PUBLIC_FGA_STORE_LABEL ?? 'archfaktor'}
         </span>
       </div>
 
-      {/* Two-column: model | tuples */}
-      <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: '1.25rem', alignItems: 'start' }}>
+      {/* ── Two-column: model | tuples ─────────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '560px 1fr', gap: '1.25rem', alignItems: 'start' }}>
 
         {/* Left — FGA Model */}
-        <div style={card}>
-          <h2 style={sectionHead}>FGA Model</h2>
-          <p style={hint}>
-            Read-only view. Edits here are local only — use the FGA dashboard to deploy model changes.
-          </p>
-          <textarea
-            style={{
-              fontFamily: 'monospace',
-              fontSize: '0.76rem',
-              width: '100%',
-              height: 400,
-              padding: '0.7rem 0.8rem',
-              border: '1px solid #d1d5db',
-              borderRadius: 6,
-              resize: 'vertical',
-              boxSizing: 'border-box',
-              lineHeight: 1.65,
-              color: '#1f2937',
-              background: '#f9fafb',
-              outline: 'none',
-            }}
-            defaultValue={FGA_MODEL}
-            spellCheck={false}
-          />
+        <div className="card card-accent-blue">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#1677ff', display: 'inline-block' }} />
+            <h2 style={sectionHead}>FGA Model</h2>
+          </div>
+          <p style={hint}>Syntax-highlighted view · edits are local only</p>
+          <FgaModelEditor defaultValue={FGA_MODEL} />
         </div>
 
         {/* Right — Tuples */}
-        <div style={card}>
+        <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.9rem' }}>
-            <h2 style={{ ...sectionHead, margin: 0 }}>
-              Tuples{!tuplesLoading ? ` (${tuples.length})` : ''}
-            </h2>
-            <button
-              style={{ ...btnOutline, opacity: tuplesLoading ? 0.5 : 1 }}
-              disabled={tuplesLoading}
-              onClick={loadTuples}
-            >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#13c2c2', display: 'inline-block' }} />
+              <h2 style={{ ...sectionHead, margin: 0 }}>
+                Tuples{!tuplesLoading ? ` (${tuples.length})` : ''}
+              </h2>
+            </div>
+            <button className="btn-outline" style={btnOutline} disabled={tuplesLoading} onClick={loadTuples}>
               {tuplesLoading ? 'Loading…' : '↻ Refresh'}
             </button>
           </div>
 
-          {tuplesError && (
-            <p style={{ color: '#dc2626', fontSize: '0.75rem', marginBottom: '0.6rem' }}>
-              {tuplesError}
-            </p>
-          )}
+          {tuplesError && <p style={{ color: '#dc2626', fontSize: '0.75rem', marginBottom: '0.6rem' }}>{tuplesError}</p>}
 
           {/* Table */}
-          <div style={{
-            border: '1px solid #e5e7eb',
-            borderRadius: 6,
-            overflow: 'hidden',
-            marginBottom: '1.25rem',
-            maxHeight: 300,
-            overflowY: 'auto',
-          }}>
+          <div style={{ border: '1px solid #e5e7eb', borderRadius: 7, overflow: 'hidden', marginBottom: '1.25rem', maxHeight: 280, overflowY: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.76rem' }}>
               <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                 <tr style={{ background: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
@@ -269,202 +221,111 @@ export default function DemoPanel() {
                   <th style={th}>Relation</th>
                   <th style={th}>Object</th>
                   <th style={th}>Condition</th>
-                  <th style={{ ...th, width: 36, paddingRight: '0.5rem' }}></th>
+                  <th style={{ ...th, width: 36 }}></th>
                 </tr>
               </thead>
               <tbody>
                 {tuples.length === 0 && !tuplesLoading ? (
-                  <tr>
-                    <td colSpan={5} style={{ padding: '1.25rem', textAlign: 'center', color: '#9ca3af', fontSize: '0.76rem' }}>
-                      No tuples in store
+                  <tr><td colSpan={5} style={{ padding: '1.25rem', textAlign: 'center', color: '#9ca3af', fontSize: '0.76rem' }}>No tuples in store</td></tr>
+                ) : tuples.map((t, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid #f3f4f6', background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
+                    <td style={{ ...td, color: '#1677ff' }}>{t.user}</td>
+                    <td style={{ ...td, color: '#6d28d9', fontWeight: 500 }}>{t.relation}</td>
+                    <td style={{ ...td, color: '#13c2c2' }}>{t.object}</td>
+                    <td style={{ ...td, color: '#6b7280' }} title={t.condition ? JSON.stringify(t.condition.context, null, 2) : undefined}>
+                      {t.condition ? t.condition.name : '—'}
+                    </td>
+                    <td style={{ ...td, textAlign: 'center' }}>
+                      <button className="btn-delete" onClick={() => handleDeleteTuple(t)} style={deleteBtn} title={`Delete ${t.user} ${t.relation} ${t.object}`}>×</button>
                     </td>
                   </tr>
-                ) : (
-                  tuples.map((t, i) => (
-                    <tr
-                      key={i}
-                      style={{
-                        borderBottom: '1px solid #f3f4f6',
-                        background: i % 2 === 0 ? '#fff' : '#fafafa',
-                      }}
-                    >
-                      <td style={td}>{t.user}</td>
-                      <td style={td}>{t.relation}</td>
-                      <td style={td}>{t.object}</td>
-                      <td style={{ ...td, color: '#6b7280' }}
-                          title={t.condition ? JSON.stringify(t.condition.context, null, 2) : undefined}>
-                        {t.condition ? t.condition.name : '—'}
-                      </td>
-                      <td style={{ ...td, textAlign: 'center', paddingRight: '0.5rem' }}>
-                        <button
-                          onClick={() => handleDeleteTuple(t)}
-                          style={deleteBtn}
-                          title={`Delete: ${t.user} ${t.relation} ${t.object}`}
-                        >
-                          ×
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
+                ))}
               </tbody>
             </table>
           </div>
 
-          {/* Create tuple form */}
-          <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '1rem' }}>
-            <h3 style={{ fontSize: '0.82rem', fontWeight: 600, margin: '0 0 0.75rem 0', color: '#374151' }}>
-              Add Tuple
-            </h3>
-
+          {/* Add tuple form */}
+          <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: '1rem' }}>
+            <h3 style={{ fontSize: '0.8rem', fontWeight: 600, margin: '0 0 0.75rem', color: '#374151' }}>Add Tuple</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.6rem', marginBottom: '0.6rem' }}>
-              <div>
-                <label style={fieldLabel}>User</label>
-                <input
-                  style={inputSm}
-                  placeholder="user:violet.archer"
-                  value={newUser}
-                  onChange={e => setNewUser(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && canCreate && handleCreateTuple()}
-                />
-              </div>
-              <div>
-                <label style={fieldLabel}>Relation</label>
-                <input
-                  style={inputSm}
-                  placeholder="owner"
-                  value={newRelation}
-                  onChange={e => setNewRelation(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && canCreate && handleCreateTuple()}
-                />
-              </div>
-              <div>
-                <label style={fieldLabel}>Object</label>
-                <input
-                  style={inputSm}
-                  placeholder="credit_profile:violet.archer"
-                  value={newObject}
-                  onChange={e => setNewObject(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && canCreate && handleCreateTuple()}
-                />
-              </div>
+              {[
+                { label: 'User', val: newUser, set: setNewUser, ph: 'user:violet.archer' },
+                { label: 'Relation', val: newRelation, set: setNewRelation, ph: 'owner' },
+                { label: 'Object', val: newObject, set: setNewObject, ph: 'credit_profile:violet.archer' },
+              ].map(({ label, val, set, ph }) => (
+                <div key={label}>
+                  <label style={fieldLabel}>{label}</label>
+                  <input style={inputSm} placeholder={ph} value={val} onChange={e => set(e.target.value)} onKeyDown={e => e.key === 'Enter' && canCreate && handleCreateTuple()} />
+                </div>
+              ))}
             </div>
 
-            {/* Condition toggle */}
-            <button
-              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.72rem', color: '#6b7280', padding: 0, marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: 4 }}
-              onClick={() => setShowCondition(v => !v)}
-            >
+            <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.72rem', color: '#6b7280', padding: 0, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: 4 }}
+              onClick={() => setShowCondition(v => !v)}>
               <span style={{ fontFamily: 'monospace' }}>{showCondition ? '▾' : '▸'}</span>
               Condition {showCondition ? '' : '(optional)'}
             </button>
 
             {showCondition && (
-              <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 6, padding: '0.75rem', marginBottom: '0.6rem', display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.6rem' }}>
+              <div style={{ background: '#f8fafd', border: '1px solid #e0e6f0', borderRadius: 7, padding: '0.75rem', marginBottom: '0.6rem', display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.6rem' }}>
                 <div>
                   <label style={fieldLabel}>Condition Name</label>
-                  <input
-                    style={inputSm}
-                    value={conditionName}
-                    onChange={e => setConditionName(e.target.value)}
-                  />
+                  <input style={inputSm} value={conditionName} onChange={e => setConditionName(e.target.value)} />
                 </div>
                 <div>
                   <label style={fieldLabel}>Context (JSON)</label>
-                  <textarea
-                    style={{
-                      fontFamily: 'monospace',
-                      fontSize: '0.72rem',
-                      width: '100%',
-                      height: 72,
-                      padding: '0.35rem 0.5rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: 4,
-                      resize: 'vertical',
-                      boxSizing: 'border-box',
-                      outline: 'none',
-                    }}
-                    value={conditionContext}
-                    onChange={e => setConditionContext(e.target.value)}
-                    spellCheck={false}
-                  />
+                  <textarea style={{ fontFamily: 'monospace', fontSize: '0.72rem', width: '100%', height: 72, padding: '0.35rem 0.5rem', border: '1px solid #d1d5db', borderRadius: 4, resize: 'vertical', boxSizing: 'border-box' }}
+                    value={conditionContext} onChange={e => setConditionContext(e.target.value)} spellCheck={false} />
                 </div>
               </div>
             )}
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <button
-                style={{ ...btnPrimary, opacity: canCreate ? 1 : 0.45 }}
-                disabled={!canCreate}
-                onClick={handleCreateTuple}
-              >
+              <button className="btn-dark" style={{ ...btnPrimary, opacity: canCreate ? 1 : 0.4 }} disabled={!canCreate} onClick={handleCreateTuple}>
                 {createLoading ? 'Writing…' : 'Add Tuple'}
               </button>
-              {createStatus && (
-                <span style={{ fontSize: '0.72rem', color: createStatus.ok ? '#16a34a' : '#dc2626' }}>
-                  {createStatus.message}
-                </span>
-              )}
+              {createStatus && <span style={{ fontSize: '0.72rem', color: createStatus.ok ? '#16a34a' : '#dc2626' }}>{createStatus.message}</span>}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Quick Actions */}
+      {/* ── Quick Actions ──────────────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginTop: '1.25rem' }}>
 
-        {/* Add to joint-2026 */}
-        <section style={card}>
-          <h2 style={sectionHead}>Scenario 5 — Add to joint-2026</h2>
-          <p style={hint}>
-            Writes <code>user:{'{fgaUserId}'} applicant mortgage_application:joint-2026</code>
-          </p>
+        <section className="card">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
+            <span style={{ fontSize: '0.78rem' }}>🔗</span>
+            <h2 style={sectionHead}>Scenario 5 — Add to joint-2026</h2>
+          </div>
+          <p style={hint}>Writes <code style={codeInline}>user:&#123;id&#125; applicant mortgage_application:joint-2026</code></p>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <input
-              style={{ ...inputFull, marginBottom: 0, flex: 1 }}
-              type="text"
+            <input className="input-full" style={{ ...inputFull, flex: 1, marginBottom: 0 }} type="text"
               placeholder="fga-user-id  (e.g. violet.archer)"
-              value={userId}
-              onChange={e => setUserId(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && !addLoading && userId.trim() && handleAddApplicant()}
-            />
-            <button
-              style={{ ...btnPrimary, opacity: !userId.trim() || addLoading ? 0.45 : 1, whiteSpace: 'nowrap' }}
-              disabled={!userId.trim() || addLoading}
-              onClick={handleAddApplicant}
-            >
+              value={userId} onChange={e => setUserId(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && !addLoading && userId.trim() && handleAddApplicant()} />
+            <button className="btn-dark" style={{ ...btnPrimary, opacity: !userId.trim() || addLoading ? 0.4 : 1, whiteSpace: 'nowrap' }}
+              disabled={!userId.trim() || addLoading} onClick={handleAddApplicant}>
               {addLoading ? 'Writing…' : 'Add'}
             </button>
           </div>
-          {addStatus && (
-            <p style={{ fontSize: '0.75rem', marginTop: '0.5rem', color: addStatus.ok ? '#16a34a' : '#dc2626' }}>
-              {addStatus.message}
-            </p>
-          )}
+          {addStatus && <p style={{ fontSize: '0.75rem', marginTop: '0.5rem', color: addStatus.ok ? '#16a34a' : '#dc2626' }}>{addStatus.message}</p>}
         </section>
 
-        {/* Reset */}
-        <section style={card}>
-          <h2 style={sectionHead}>Reset Demo</h2>
-          <p style={hint}>
-            Deletes all tuples. Owner tuples are recreated automatically on next login.
-          </p>
-          <button
-            style={{ ...btnDanger, opacity: resetLoading ? 0.5 : 1 }}
-            disabled={resetLoading}
-            onClick={handleReset}
-          >
+        <section className="card">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
+            <span style={{ fontSize: '0.78rem' }}>🔄</span>
+            <h2 style={sectionHead}>Reset Demo</h2>
+          </div>
+          <p style={hint}>Deletes all tuples. Owner tuples are recreated on next login.</p>
+          <button className="btn-danger" style={{ ...btnDanger, opacity: resetLoading ? 0.5 : 1 }} disabled={resetLoading} onClick={handleReset}>
             {resetLoading ? 'Resetting…' : 'Reset FGA store'}
           </button>
-          {resetStatus && (
-            <p style={{ fontSize: '0.75rem', marginTop: '0.5rem', color: resetStatus.ok ? '#16a34a' : '#dc2626' }}>
-              {resetStatus.message}
-            </p>
-          )}
+          {resetStatus && <p style={{ fontSize: '0.75rem', marginTop: '0.5rem', color: resetStatus.ok ? '#16a34a' : '#dc2626' }}>{resetStatus.message}</p>}
         </section>
       </div>
 
-      {/* Diagrams */}
+      {/* ── Diagrams + Prompts ─────────────────────────────────────────────── */}
       <DiagramsPanel />
     </main>
   );
@@ -472,26 +333,56 @@ export default function DemoPanel() {
 
 // ─── Diagrams panel ───────────────────────────────────────────────────────────
 
-const ARCH_DIAGRAM = `graph LR
-  U("👤 User\\nBrowser + Phone")
-  CL("🤖 Claude.ai\\nMCP Client")
-  A0("Auth0\\nToken Issuance + CIBA")
-  G("Guardian\\nPush Notification")
-  FGA("Auth0 FGA\\nAuthorization Store")
-  MCP("MCP Server\\nNext.js")
+const ARCH_DIAGRAM = `sequenceDiagram
+  actor U as 👤 User (Browser)
+  participant P as 📱 Phone (Guardian)
+  participant CL as 🤖 Claude.ai
+  participant A0 as Auth0
+  participant M as MCP Server
+  participant F as Auth0 FGA
 
-  CL -- "OAuth 2.0 PKCE\\n(tpc_ CIMD)" --> A0
-  A0 -- "JWT access token" --> CL
-  CL -- "Bearer + JSON-RPC" --> MCP
-  MCP -- "Verify JWT" --> A0
-  MCP -- "check permission" --> FGA
-  FGA -- "allowed / denied" --> MCP
-  MCP -- "bc-authorize" --> A0
-  A0 -- "push notification" --> G
-  G -- "delivered to phone" --> U
-  U -- "approves" --> A0
-  A0 -- "CIBA token" --> MCP
-  MCP -- "write consent tuple" --> FGA`;
+  rect rgb(237,244,255)
+    Note over U,A0: ① Connect MCP Integration
+    U->>CL: Add integration URL /api/mcp
+    CL->>A0: Authorization request — OAuth 2.0 PKCE (tpc_ CIMD)
+    A0-->>U: Redirect to login page
+    U->>A0: Enter credentials
+    A0-->>CL: JWT access token (sub + email claims)
+  end
+
+  rect rgb(237,255,244)
+    Note over CL,F: ② Tool Call — Account Summary (no consent needed)
+    CL->>M: POST /api/mcp — Bearer JWT + tool: get_account_summary
+    M->>A0: Verify JWT signature via JWKS endpoint
+    M->>F: ensureOwnerTuple(userId) — idempotent, first call only
+    M->>F: check can_view_summary on credit_profile:userId
+    F-->>M: ✅ allowed — user is owner
+    M-->>CL: account summary data
+  end
+
+  rect rgb(255,248,237)
+    Note over CL,P: ③ Sensitive Data — CIBA Consent Flow
+    CL->>M: tool: get_credit_report
+    M->>F: check can_view_full on credit_profile:userId
+    F-->>M: ❌ denied — no consented_agent tuple
+    M->>A0: bc-authorize (CIBA) — login_hint: {format:iss_sub, sub:userId}
+    A0->>P: Guardian push notification
+    U->>P: ✅ Approve on phone
+    loop Poll every 2s
+      M->>A0: Token endpoint (auth_req_id poll)
+    end
+    A0-->>M: CIBA approved — consent token
+    M->>F: write consented_agent tuple (granted_at = now, expires 30d)
+    M-->>CL: full credit report ✅
+  end
+
+  rect rgb(248,237,255)
+    Note over CL,F: ④ Subsequent Calls — Consent Cached
+    CL->>M: tool: run_mortgage_model
+    M->>F: check can_run_mortgage_model
+    F-->>M: ✅ same tuple — condition passes (within 30 days)
+    M-->>CL: mortgage analysis (no Guardian push needed)
+  end`;
 
 const MODEL_DIAGRAM = `graph TD
   U["👤 user"]
@@ -561,10 +452,66 @@ const FLOW_DIAGRAM = `sequenceDiagram
     M-->>C: joint account data
   end`;
 
+// ── Demo Prompts data ─────────────────────────────────────────────────────────
+
+const SCENARIOS = [
+  {
+    num: 1,
+    label: 'Account Summary',
+    badge: 'badge-green',
+    badgeText: 'No consent',
+    prompts: ['"What does my credit profile look like?"'],
+    fga: 'can_view_summary on credit_profile — ✅ owner always allowed',
+    what: 'FGA check passes immediately. Returns credit score, utilization, and payment history with the logged-in user\'s name.',
+    talk: 'Basic authorization — the owner can always see their own summary. No phone prompt, no friction. FGA makes this a single tuple check.',
+  },
+  {
+    num: 2,
+    label: 'Full Credit Report',
+    badge: 'badge-amber',
+    badgeText: 'CIBA triggered',
+    prompts: ['"Can you pull my full credit report?"'],
+    fga: 'can_view_full — ❌ no consented_agent tuple → triggers CIBA + Guardian push',
+    what: 'FGA check fails. Server initiates CIBA via bc-authorize. Guardian push sent to phone. On approval, consent tuple written with granted_at timestamp.',
+    talk: 'This is the Human-in-the-Loop moment. The AI literally cannot access the data until the user approves on their phone. The approval is recorded in FGA as an auditable, time-limited consent record.',
+  },
+  {
+    num: 3,
+    label: 'Credit Score Deep Dive',
+    badge: 'badge-blue',
+    badgeText: 'Consent cached',
+    prompts: ['"What factors are affecting my credit score?"'],
+    fga: 'can_view_full — ✅ consented_agent tuple from Scenario 2 still valid',
+    what: 'Completely different question, same data context. FGA finds the existing tuple and condition passes — no Guardian push.',
+    talk: 'The user asked something completely different, but FGA already knows the agent has consent. No second push, no friction — the 30-day window means the user stays in control without being interrupted on every question.',
+  },
+  {
+    num: 4,
+    label: 'Mortgage Eligibility Model',
+    badge: 'badge-purple',
+    badgeText: 'Shared consent',
+    prompts: ['"Am I eligible for a $450k mortgage on a $525k property?"'],
+    fga: 'can_run_mortgage_model — ✅ same consented_agent tuple covers this too',
+    what: 'Different tool, same FGA tuple. Returns DTI analysis, LTV ratio, estimated rate, and conditional approval verdict.',
+    talk: 'One approval, multiple tools. Consent consolidation — no push fatigue, no repeated interruptions for the same data context.',
+  },
+  {
+    num: 5,
+    label: 'Joint Account Access',
+    badge: 'badge-red',
+    badgeText: 'Denied → re-check',
+    prompts: ['"Can you pull up the joint-2026 shared account?"', '"I just got added — can you check again?"'],
+    fga: 'can_view on mortgage_application:joint-2026 — ❌ not a member → SE adds tuple → ✅',
+    what: 'Claude denies and tells the user to get added. SE uses the demo panel to write the applicant tuple. User asks again — FGA passes instantly.',
+    talk: 'The AI can only do what FGA allows — it doesn\'t grant its own access. Someone with authority (an admin, a loan officer) has to add the user. The moment that happens, FGA propagates instantly and Claude can proceed.',
+  },
+];
+
 const TABS = [
-  { id: 'arch', label: 'System Architecture', chart: ARCH_DIAGRAM },
-  { id: 'model', label: 'FGA Model', chart: MODEL_DIAGRAM },
-  { id: 'flows', label: 'Demo Flows', chart: FLOW_DIAGRAM },
+  { id: 'arch',    label: 'System Architecture', chart: ARCH_DIAGRAM  },
+  { id: 'model',   label: 'FGA Model',            chart: MODEL_DIAGRAM },
+  { id: 'flows',   label: 'Demo Flows',            chart: FLOW_DIAGRAM  },
+  { id: 'prompts', label: 'Demo Prompts',          chart: null          },
 ] as const;
 
 function DiagramsPanel() {
@@ -572,42 +519,85 @@ function DiagramsPanel() {
   const current = TABS.find(t => t.id === active)!;
 
   return (
-    <div style={{ ...card, marginTop: '1.25rem' }}>
-      <h2 style={{ ...sectionHead, marginBottom: '1rem' }}>Diagrams</h2>
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0' }}>
+    <div className="card" style={{ marginTop: '1.25rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+        <span style={{ fontSize: '0.78rem' }}>📊</span>
+        <h2 style={{ ...sectionHead, margin: 0 }}>Diagrams & Reference</h2>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #e5e7eb', marginBottom: '1.25rem' }}>
         {TABS.map(t => (
           <button
             key={t.id}
+            className="tab-btn"
+            data-active={active === t.id}
             onClick={() => setActive(t.id)}
             style={{
-              fontFamily: 'monospace',
+              fontFamily: 'inherit',
               fontSize: '0.78rem',
-              padding: '0.4rem 0.85rem',
+              padding: '0.45rem 0.9rem',
               background: 'none',
               border: 'none',
-              borderBottom: active === t.id ? '2px solid #111' : '2px solid transparent',
-              color: active === t.id ? '#111' : '#6b7280',
+              borderBottom: active === t.id ? '2px solid #1677ff' : '2px solid transparent',
+              color: active === t.id ? '#1677ff' : '#6b7280',
               cursor: 'pointer',
               fontWeight: active === t.id ? 600 : 400,
               marginBottom: '-1px',
+              borderRadius: '4px 4px 0 0',
             }}
           >
             {t.label}
           </button>
         ))}
       </div>
-      <MermaidDiagram key={current.id} id={current.id} chart={current.chart} />
+
+      {/* Content */}
+      {current.chart ? (
+        <MermaidDiagram key={current.id} id={current.id} chart={current.chart} />
+      ) : (
+        <PromptsPanel />
+      )}
+    </div>
+  );
+}
+
+function PromptsPanel() {
+  return (
+    <div>
+      <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: 0, marginBottom: '1.25rem' }}>
+        Run these scenarios in order. Reset the FGA store between demo runs.
+      </p>
+      {SCENARIOS.map(s => (
+        <div key={s.num} className="scenario-card">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.6rem' }}>
+            <span style={{ fontWeight: 700, fontSize: '0.75rem', color: '#374151' }}>Scenario {s.num}</span>
+            <span style={{ fontWeight: 600, fontSize: '0.82rem', color: '#0f172a' }}>{s.label}</span>
+            <span className={`badge ${s.badge}`}>{s.badgeText}</span>
+          </div>
+
+          <div style={{ marginBottom: '0.5rem' }}>
+            {s.prompts.map((p, i) => (
+              <span key={i} className="prompt-chip">{p}</span>
+            ))}
+          </div>
+
+          <div style={{ fontSize: '0.73rem', color: '#374151', marginBottom: '0.35rem' }}>
+            <span style={{ color: '#6b7280', fontWeight: 500 }}>FGA: </span>{s.fga}
+          </div>
+          <div style={{ fontSize: '0.73rem', color: '#374151', marginBottom: '0.35rem' }}>
+            <span style={{ color: '#6b7280', fontWeight: 500 }}>What happens: </span>{s.what}
+          </div>
+          <div style={{ fontSize: '0.73rem', borderTop: '1px solid #e9ebef', paddingTop: '0.35rem', marginTop: '0.35rem', fontStyle: 'italic', color: '#4b5563' }}>
+            💬 {s.talk}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
-
-const card: React.CSSProperties = {
-  border: '1px solid #e5e7eb',
-  borderRadius: 8,
-  padding: '1.25rem 1.5rem',
-};
 
 const sectionHead: React.CSSProperties = {
   fontSize: '0.88rem',
@@ -617,7 +607,7 @@ const sectionHead: React.CSSProperties = {
 };
 
 const hint: React.CSSProperties = {
-  fontSize: '0.73rem',
+  fontSize: '0.72rem',
   color: '#6b7280',
   marginTop: 0,
   marginBottom: '0.85rem',
@@ -627,7 +617,7 @@ const th: React.CSSProperties = {
   textAlign: 'left',
   padding: '0.45rem 0.75rem',
   fontWeight: 600,
-  fontSize: '0.68rem',
+  fontSize: '0.67rem',
   color: '#6b7280',
   textTransform: 'uppercase',
   letterSpacing: '0.05em',
@@ -654,30 +644,29 @@ const fieldLabel: React.CSSProperties = {
 const inputSm: React.CSSProperties = {
   display: 'block',
   width: '100%',
-  fontFamily: 'monospace',
+  fontFamily: 'inherit',
   fontSize: '0.76rem',
   padding: '0.35rem 0.5rem',
   border: '1px solid #d1d5db',
-  borderRadius: 4,
+  borderRadius: 5,
   boxSizing: 'border-box',
-  outline: 'none',
+  background: '#fff',
 };
 
 const inputFull: React.CSSProperties = {
   display: 'block',
   width: '100%',
-  fontFamily: 'monospace',
+  fontFamily: 'inherit',
   fontSize: '0.85rem',
   padding: '0.45rem 0.65rem',
   border: '1px solid #d1d5db',
   borderRadius: 6,
-  marginBottom: '0.75rem',
   boxSizing: 'border-box',
-  outline: 'none',
+  background: '#fff',
 };
 
 const btnPrimary: React.CSSProperties = {
-  fontFamily: 'monospace',
+  fontFamily: 'inherit',
   fontSize: '0.8rem',
   padding: '0.42rem 0.9rem',
   background: '#111',
@@ -688,7 +677,7 @@ const btnPrimary: React.CSSProperties = {
 };
 
 const btnOutline: React.CSSProperties = {
-  fontFamily: 'monospace',
+  fontFamily: 'inherit',
   fontSize: '0.72rem',
   padding: '0.28rem 0.65rem',
   background: '#f9fafb',
@@ -699,7 +688,7 @@ const btnOutline: React.CSSProperties = {
 };
 
 const btnDanger: React.CSSProperties = {
-  fontFamily: 'monospace',
+  fontFamily: 'inherit',
   fontSize: '0.85rem',
   padding: '0.5rem 1rem',
   background: '#dc2626',
@@ -717,5 +706,13 @@ const deleteBtn: React.CSSProperties = {
   fontSize: '1rem',
   padding: '0 2px',
   lineHeight: 1,
-  opacity: 0.7,
+  opacity: 0.65,
+};
+
+const codeInline: React.CSSProperties = {
+  background: '#f3f4f6',
+  border: '1px solid #e5e7eb',
+  borderRadius: 4,
+  padding: '0.1rem 0.35rem',
+  fontSize: '0.72rem',
 };

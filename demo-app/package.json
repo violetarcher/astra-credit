@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@auth0/nextjs-auth0": "^4.25.0",
     "@modelcontextprotocol/sdk": "^1.12.0",
     "@openfga/sdk": "^0.9.0",
     "auth0": "^4.15.0",

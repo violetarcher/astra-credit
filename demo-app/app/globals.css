@@ -1,0 +1,71 @@
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #f0f2f5;
+  font-family: ui-monospace, "SF Mono", Menlo, "Cascadia Code", monospace;
+}
+
+button { transition: background 0.12s, opacity 0.12s, color 0.12s; }
+
+.btn-dark:hover:not(:disabled)   { background: #333 !important; }
+.btn-outline:hover:not(:disabled) { background: #e9ebef !important; }
+.btn-danger:hover:not(:disabled)  { background: #b91c1c !important; }
+.btn-delete:hover { opacity: 1 !important; color: #b91c1c !important; }
+.tab-btn:hover:not([data-active="true"]) { color: #374151 !important; }
+
+input:focus, textarea:focus {
+  outline: none;
+  border-color: #1677ff !important;
+  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.15);
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.card-accent-blue {
+  border-left: 3px solid #1677ff;
+}
+
+.scenario-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.85rem;
+  background: #fafbfc;
+}
+
+.scenario-card:last-child { margin-bottom: 0; }
+
+.prompt-chip {
+  display: inline-block;
+  background: #f0f6ff;
+  border: 1px solid #cce0ff;
+  border-radius: 6px;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.78rem;
+  color: #1d4ed8;
+  margin: 0.2rem 0.2rem 0.2rem 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  letter-spacing: 0.03em;
+}
+
+.badge-green  { background: #dcfce7; color: #15803d; }
+.badge-red    { background: #fee2e2; color: #b91c1c; }
+.badge-blue   { background: #dbeafe; color: #1d4ed8; }
+.badge-amber  { background: #fef3c7; color: #92400e; }
+.badge-purple { background: #ede9fe; color: #6d28d9; }
